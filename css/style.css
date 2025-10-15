@@ -1,0 +1,197 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            background: #000;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 18px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f00;
+            font-size: 72px;
+            text-shadow: 0 0 20px #f00;
+            display: none;
+            z-index: 200;
+            text-align: center;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 14px;
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #0ff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 0 10px #0ff;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            color: #0ff;
+            text-shadow: 0 0 20px #0ff;
+        }
+        #startScreen h1 {
+            font-size: 64px;
+            margin-bottom: 30px;
+        }
+        #startBtn {
+            font-size: 24px;
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px #0ff;
+            transition: all 0.3s;
+        }
+        #startBtn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff;
+        }
+        /* Controles Mobile */
+        #mobileControls {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 150;
+        }
+        .control-button {
+            position: absolute;
+            background: rgba(0, 255, 255, 0.3);
+            border: 2px solid #0ff;
+            border-radius: 50%;
+            color: #0ff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #0ff;
+            pointer-events: auto;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+        .control-button:active {
+            background: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 20px #0ff;
+        }
+        #dpad {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 180px;
+            height: 180px;
+        }
+        #btnUp {
+            width: 60px;
+            height: 60px;
+            top: 0;
+            left: 60px;
+        }
+        #btnDown {
+            width: 60px;
+            height: 60px;
+            bottom: 0;
+            left: 60px;
+        }
+        #btnLeft {
+            width: 60px;
+            height: 60px;
+            top: 60px;
+            left: 0;
+        }
+        #btnRight {
+            width: 60px;
+            height: 60px;
+            top: 60px;
+            right: 0;
+        }
+        #actionButtons {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+        }
+        #btnJump {
+            width: 70px;
+            height: 70px;
+            bottom: 0;
+            right: 0;
+        }
+        #btnShoot {
+            width: 70px;
+            height: 70px;
+            bottom: 80px;
+            right: 20px;
+        }
+        #btnRun {
+            width: 50px;
+            height: 50px;
+            top: 0;
+            right: 40px;
+            font-size: 18px;
+        }
+        #btnCamera {
+            width: 50px;
+            height: 50px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+        }
+        @media (max-width: 768px) {
+            #instructions {
+                font-size: 10px;
+                bottom: 10px;
+            }
+            #hud {
+                font-size: 14px;
+            }
+        }
