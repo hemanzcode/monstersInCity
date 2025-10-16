@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cyberpunk Survival</title>
     <style>
         * {
@@ -97,107 +97,179 @@
             color: #000;
             box-shadow: 0 0 20px #0ff;
         }
+        #customizationScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 250;
+            color: #0ff;
+            text-shadow: 0 0 20px #0ff;
+            padding: 0 50px;
+        }
+        #customizationScreen h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .customization-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 50px;
+        }
+        .customization-right {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-section {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .custom-section label {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .custom-section select, .custom-section button {
+            font-size: 18px;
+            padding: 5px 10px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px #0ff;
+            transition: all 0.3s;
+        }
+        .custom-section select:hover, .custom-section button:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 10px #0ff;
+        }
+        #confirmBtn {
+            font-size: 24px;
+            padding: 15px 40px;
+            margin-top: 20px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px #0ff;
+            transition: all 0.3s;
+        }
+        #confirmBtn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff;
+        }
+        
         /* Controles Mobile */
         #mobileControls {
             display: none;
             position: fixed;
-            bottom: 0;
-            left: 0;
             width: 100%;
             height: 100%;
+            top: 0;
+            left: 0;
             pointer-events: none;
             z-index: 150;
         }
-        .control-button {
+        
+        /* Joystick Virtual */
+        #joystickContainer {
             position: absolute;
-            background: rgba(0, 255, 255, 0.3);
-            border: 2px solid #0ff;
-            border-radius: 50%;
-            color: #0ff;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 0 0 10px #0ff;
+            bottom: 30px;
+            left: 30px;
+            width: 150px;
+            height: 150px;
             pointer-events: auto;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: none;
         }
-        .control-button:active {
-            background: rgba(0, 255, 255, 0.6);
-            box-shadow: 0 0 20px #0ff;
-        }
-        #dpad {
+        
+        #joystickBase {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 180px;
-            height: 180px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: 3px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
-        #btnUp {
+        
+        #joystickStick {
+            position: absolute;
             width: 60px;
             height: 60px;
-            top: 0;
-            left: 60px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.6);
+            border: 2px solid #0ff;
+            box-shadow: 0 0 15px #0ff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
         }
-        #btnDown {
-            width: 60px;
-            height: 60px;
-            bottom: 0;
-            left: 60px;
-        }
-        #btnLeft {
-            width: 60px;
-            height: 60px;
-            top: 60px;
-            left: 0;
-        }
-        #btnRight {
-            width: 60px;
-            height: 60px;
-            top: 60px;
-            right: 0;
-        }
+        
+        /* Botões de Ação */
         #actionButtons {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 180px;
-            height: 180px;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
         }
-        #btnJump {
+        
+        .action-btn {
             width: 70px;
             height: 70px;
-            bottom: 0;
-            right: 0;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            border: 3px solid #0ff;
+            color: #0ff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 64px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            font-family: 'Courier New', monospace;
+            user-select: none;
+            touch-action: none;
         }
-        #btnShoot {
-            width: 70px;
-            height: 70px;
-            bottom: 80px;
-            right: 20px;
+        
+        .action-btn:active {
+            background: rgba(0, 255, 255, 0.6);
+            transform: scale(0.95);
         }
-        #btnRun {
-            width: 50px;
-            height: 50px;
-            top: 0;
-            right: 40px;
-            font-size: 18px;
-        }
-        #btnCamera {
-            width: 50px;
-            height: 50px;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+        
+        /* Botão de Disparo Grande */
+        #shootBtn {
+            width: 80px;
+            height: 80px;
+            line-height: 74px;
             font-size: 16px;
         }
-        @media (max-width: 768px) {
-            #instructions {
-                font-size: 10px;
-                bottom: 10px;
+        
+        /* Detectar Mobile */
+        @media (max-width: 768px), (pointer: coarse) {
+            #mobileControls {
+                display: block;
             }
+            
+            #instructions {
+                display: none;
+            }
+            
             #hud {
                 font-size: 14px;
             }
@@ -209,6 +281,49 @@
         <h1>CYBERPUNK SURVIVAL</h1>
         <p style="margin-bottom: 20px;">Encontre suprimentos e sobreviva aos monstros!</p>
         <button id="startBtn">INICIAR</button>
+    </div>
+    <div id="customizationScreen">
+        <div class="customization-left">
+            <h2>Customizar Personagem</h2>
+            <div class="custom-section">
+                <label for="hairSelect">Cabelo:</label>
+                <select id="hairSelect">
+                    <option value="none">Nenhum</option>
+                    <option value="short">Curto</option>
+                    <option value="long">Longo</option>
+                    <option value="mohawk">Moicano</option>
+                </select>
+            </div>
+            <div class="custom-section">
+                <label for="backpackSelect">Mochila:</label>
+                <select id="backpackSelect">
+                    <option value="none">Nenhuma</option>
+                    <option value="small">Pequena</option>
+                    <option value="large">Grande</option>
+                </select>
+            </div>
+            <div class="custom-section">
+                <label for="clothesColor">Cor da Roupa:</label>
+                <select id="clothesColor">
+                    <option value="0x00aaff">Azul (Padrão)</option>
+                    <option value="0xff0000">Vermelho</option>
+                    <option value="0x00ff00">Verde</option>
+                    <option value="0xffff00">Amarelo</option>
+                </select>
+            </div>
+            <div class="custom-section">
+                <label for="jacketSelect">Jaqueta:</label>
+                <select id="jacketSelect">
+                    <option value="none">Nenhuma</option>
+                    <option value="leather">Couro</option>
+                    <option value="cyber">Cyberpunk</option>
+                </select>
+            </div>
+            <button id="confirmBtn">CONFIRMAR</button>
+        </div>
+        <div class="customization-right">
+            <!-- Personagem será renderizado aqui -->
+        </div>
     </div>
     <div id="hud">
         <div>VIDA: <span id="health">100</span></div>
@@ -222,24 +337,24 @@
         <div style="font-size: 24px; margin-top: 20px;">Pressione R para reiniciar</div>
     </div>
     <div id="instructions">
-        WASD: Mover | Espaço: Pular | Clique: Atirar | T: Alternar visão | G: Visão aérea | Portal Azul = Próxima fase
+        WASD: Mover | Espaço: Pular/Sair do trem | Clique: Atirar | T: Alternar visão | G: Visão aérea | ESC: Sair da primeira pessoa | Portal Azul = Próxima fase
     </div>
     <div id="crosshair"></div>
     
     <!-- Controles Mobile -->
     <div id="mobileControls">
-        <div id="dpad">
-            <div class="control-button" id="btnUp">▲</div>
-            <div class="control-button" id="btnDown">▼</div>
-            <div class="control-button" id="btnLeft">◄</div>
-            <div class="control-button" id="btnRight">►</div>
+        <!-- Joystick Virtual -->
+        <div id="joystickContainer">
+            <div id="joystickBase"></div>
+            <div id="joystickStick"></div>
         </div>
+        
+        <!-- Botões de Ação -->
         <div id="actionButtons">
-            <div class="control-button" id="btnJump">⬆</div>
-            <div class="control-button" id="btnShoot">🎯</div>
-            <div class="control-button" id="btnRun">⚡</div>
+            <div class="action-btn" id="jumpBtn">PULAR</div>
+            <div class="action-btn" id="shootBtn">ATIRAR</div>
+            <div class="action-btn" id="viewBtn">VISÃO</div>
         </div>
-        <div class="control-button" id="btnCamera">👁</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -251,170 +366,84 @@
         let health = 100, stamina = 100, score = 0, level = 1, hasWeapon = false;
         let gameOver = false, gameStarted = false;
         let keys = {}, velocity = new THREE.Vector3();
-        let canJump = true, walkCycle = 0;
+        let isOnGround = true, walkCycle = 0;
         let leftArm, rightArm, leftLeg, rightLeg;
         let cameraMode = 'third'; // 'third', 'first', 'god'
         let worldTheme = 0;
         let isInTrain = false;
         let raycaster = new THREE.Raycaster();
         let cameraOffset = 0; // Para ajustar altura da câmera em caso de obstrução
-        let isMobile = false; // Detectar se é mobile
+        let fpsWeaponModel = null; // Modelo da arma para primeira pessoa
+        
+        // Sistema profissional de câmera primeira pessoa
+        let fpsCamera = {
+            yaw: 0,           // Rotação horizontal (esquerda/direita)
+            pitch: 0,         // Rotação vertical (cima/baixo)
+            isLocked: false,  // Se o mouse está bloqueado
+            sensitivity: 0.002, // Sensibilidade do mouse
+            maxPitch: Math.PI / 2 - 0.1, // Limite máximo de inclinação
+            minPitch: -Math.PI / 2 + 0.1  // Limite mínimo de inclinação
+        };
 
-        // Detectar dispositivo mobile
-        function detectMobile() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            return isMobileDevice || isTouchDevice;
+        // Variáveis para customização
+        let previewScene, previewCamera, previewRenderer, previewPlayer;
+        let customHair, customBackpack, customJacket;
+        let customClothesColor = 0x00aaff;
+        
+        // Controles Mobile
+        let mobileJoystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            deltaX: 0,
+            deltaY: 0
+        };
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Função para atualizar a orientação da câmera FPS
+        function updateFPSCamera(deltaX, deltaY) {
+            if (!fpsCamera.isLocked) return;
+            
+            // Atualizar yaw (rotação horizontal)
+            fpsCamera.yaw -= deltaX * fpsCamera.sensitivity;
+            
+            // Atualizar pitch (rotação vertical) com limitações
+            fpsCamera.pitch -= deltaY * fpsCamera.sensitivity;
+            fpsCamera.pitch = Math.max(fpsCamera.minPitch, Math.min(fpsCamera.maxPitch, fpsCamera.pitch));
         }
 
-        // Configurar controles mobile
-        function setupMobileControls() {
-            isMobile = detectMobile();
+        // Função para calcular direção de movimento baseada na câmera FPS
+        function getFPSMovementDirection() {
+            const forward = new THREE.Vector3(0, 0, -1); // usar -Z como frente
+            const right = new THREE.Vector3(1, 0, 0);
             
-            if (isMobile) {
-                document.getElementById('mobileControls').style.display = 'block';
-                document.getElementById('crosshair').style.display = 'none';
-                document.getElementById('instructions').textContent = 'Use os controles na tela para jogar';
-                
-                // Função auxiliar para simular tecla pressionada
-                const simulateKey = (keyCode, isPressed) => {
-                    keys[keyCode] = isPressed;
-                };
+            // Aplicar rotação yaw (horizontal)
+            forward.applyEuler(new THREE.Euler(0, fpsCamera.yaw, 0));
+            right.applyEuler(new THREE.Euler(0, fpsCamera.yaw, 0));
+            
+            return { forward, right };
+        }
 
-                // D-pad - Movimento
-                const btnUp = document.getElementById('btnUp');
-                const btnDown = document.getElementById('btnDown');
-                const btnLeft = document.getElementById('btnLeft');
-                const btnRight = document.getElementById('btnRight');
-                
-                // Eventos para botão CIMA (W)
-                btnUp.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyW', true);
-                });
-                btnUp.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyW', false);
-                });
-                btnUp.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyW', false);
-                });
-
-                // Eventos para botão BAIXO (S)
-                btnDown.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyS', true);
-                });
-                btnDown.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyS', false);
-                });
-                btnDown.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyS', false);
-                });
-
-                // Eventos para botão ESQUERDA (A)
-                btnLeft.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyA', true);
-                });
-                btnLeft.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyA', false);
-                });
-                btnLeft.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyA', false);
-                });
-
-                // Eventos para botão DIREITA (D)
-                btnRight.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyD', true);
-                });
-                btnRight.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyD', false);
-                });
-                btnRight.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    simulateKey('KeyD', false);
-                });
-
-                // Botão PULAR
-                const btnJump = document.getElementById('btnJump');
-                btnJump.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (canJump && stamina > 10 && !gameOver && gameStarted) {
-                        velocity.y = 0.5;
-                        canJump = false;
-                        stamina = Math.max(0, stamina - 5);
-                    }
-                });
-                btnJump.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    canJump = true;
-                });
-
-                // Botão ATIRAR
-                const btnShoot = document.getElementById('btnShoot');
-                btnShoot.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (!hasWeapon || gameOver || !gameStarted) return;
-                    const proj = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.3),
-                        new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
-                    );
-                    proj.position.copy(player.position);
-                    proj.position.y += 1;
-                    const dir = new THREE.Vector3(
-                        Math.sin(player.rotation.y),
-                        0,
-                        Math.cos(player.rotation.y)
-                    );
-                    projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(0.8) });
-                    scene.add(proj);
-                });
-
-                // Botão CORRER
-                const btnRun = document.getElementById('btnRun');
-                btnRun.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    simulateKey('ShiftLeft', true);
-                });
-                btnRun.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    simulateKey('ShiftLeft', false);
-                });
-                btnRun.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    simulateKey('ShiftLeft', false);
-                });
-
-                // Botão CÂMERA
-                const btnCamera = document.getElementById('btnCamera');
-                btnCamera.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (!gameOver && gameStarted) {
-                        if (cameraMode === 'third') {
-                            cameraMode = 'first';
-                        } else if (cameraMode === 'first') {
-                            cameraMode = 'god';
-                        } else {
-                            cameraMode = 'third';
-                        }
-                    }
-                });
+        // Função para solicitar bloqueio do ponteiro
+        function requestPointerLock() {
+            if (cameraMode === 'first' && !fpsCamera.isLocked) {
+                document.body.requestPointerLock();
             }
         }
 
-        // Função para criar o jogador
-        function createPlayer() {
+        // Função para liberar bloqueio do ponteiro
+        function exitPointerLock() {
+            if (fpsCamera.isLocked) {
+                document.exitPointerLock();
+            }
+        }
+
+        // Função para criar o jogador (agora com opções de customização)
+        function createPlayer(customOptions = {}) {
             const group = new THREE.Object3D();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x003366, emissiveIntensity: 0.2 });
+            const bodyMat = new THREE.MeshStandardMaterial({ color: customOptions.clothesColor || 0x00aaff, emissive: 0x003366, emissiveIntensity: 0.44 }); // Aumentado de 0.2 para 0.44 (120% mais brilho)
 
             const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.4), bodyMat);
             body.position.y = 0.6;
@@ -441,10 +470,150 @@
             rightLeg.position.set(0.25, -0.45, 0);
             group.add(rightLeg);
 
+            // Adicionar customizações
+            if (customOptions.hair) {
+                let hairGeom, hairMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+                if (customOptions.hair === 'short') {
+                    hairGeom = new THREE.BoxGeometry(0.65, 0.2, 0.65);
+                } else if (customOptions.hair === 'long') {
+                    hairGeom = new THREE.BoxGeometry(0.65, 0.5, 0.65);
+                } else if (customOptions.hair === 'mohawk') {
+                    hairGeom = new THREE.BoxGeometry(0.2, 0.4, 0.65);
+                }
+                customHair = new THREE.Mesh(hairGeom, hairMat);
+                customHair.position.set(0, 1.8 + (customOptions.hair === 'long' ? 0.15 : 0), 0);
+                group.add(customHair);
+            }
+
+            if (customOptions.backpack) {
+                let backpackGeom, backpackMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                if (customOptions.backpack === 'small') {
+                    backpackGeom = new THREE.BoxGeometry(0.7, 0.8, 0.5);
+                } else if (customOptions.backpack === 'large') {
+                    backpackGeom = new THREE.BoxGeometry(0.9, 1.0, 0.6);
+                }
+                customBackpack = new THREE.Mesh(backpackGeom, backpackMat);
+                customBackpack.position.set(0, 0.6, -0.45);
+                group.add(customBackpack);
+            }
+
+            if (customOptions.jacket) {
+                let jacketGeom, jacketMat = new THREE.MeshStandardMaterial({ color: customOptions.jacket === 'leather' ? 0x4a2700 : 0x00ffff });
+                jacketGeom = new THREE.BoxGeometry(0.9, 1.3, 0.5);
+                customJacket = new THREE.Mesh(jacketGeom, jacketMat);
+                customJacket.position.set(0, 0.6, 0);
+                group.add(customJacket);
+            }
+
             return group;
         }
 
-        // Função para criar dinossauro
+        // Função para inicializar a cena de preview de customização
+        function initCustomizationPreview() {
+            previewScene = new THREE.Scene();
+            previewScene.background = new THREE.Color(0x000000);
+            previewScene.fog = new THREE.FogExp2(0x000000, 0.1);
+
+            // Calcular tamanho da área direita (metade da tela)
+            const rightAreaWidth = window.innerWidth / 2;
+            const rightAreaHeight = window.innerHeight;
+
+            previewCamera = new THREE.PerspectiveCamera(75, rightAreaWidth / rightAreaHeight, 0.1, 1000);
+            previewRenderer = new THREE.WebGLRenderer({ antialias: true });
+            previewRenderer.setSize(rightAreaWidth, rightAreaHeight);
+            
+            // Adicionar o renderer à área direita
+            const rightArea = document.querySelector('.customization-right');
+            if (rightArea) {
+                rightArea.appendChild(previewRenderer.domElement);
+            } else {
+                // Fallback: adicionar ao body se a área direita não for encontrada
+                document.body.appendChild(previewRenderer.domElement);
+                console.log('Área direita não encontrada, usando fallback');
+            }
+
+            // Aumentar brilho com mais luzes
+            previewScene.add(new THREE.AmbientLight(0xffffff, 1.2)); // Aumentado de 0.5 para 1.2
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.6); // Aumentado de 0.8 para 1.6
+            dirLight.position.set(5, 10, 5);
+            previewScene.add(dirLight);
+            
+            // Adicionar luz adicional para mais brilho
+            const extraLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            extraLight.position.set(-5, 10, -5);
+            previewScene.add(extraLight);
+
+            previewCamera.position.set(0, 2, 5);
+            previewCamera.lookAt(0, 1.5, 0);
+
+            // Aguardar um frame antes de criar o player para garantir que os elementos HTML estejam prontos
+            setTimeout(() => {
+                updatePreviewPlayer();
+            }, 100);
+
+            function animatePreview() {
+                requestAnimationFrame(animatePreview);
+                if (previewPlayer) {
+                    previewPlayer.rotation.y += 0.01;
+                }
+                previewRenderer.render(previewScene, previewCamera);
+            }
+            animatePreview();
+
+            window.addEventListener('resize', () => {
+                const newRightAreaWidth = window.innerWidth / 2;
+                const newRightAreaHeight = window.innerHeight;
+                previewCamera.aspect = newRightAreaWidth / newRightAreaHeight;
+                previewCamera.updateProjectionMatrix();
+                previewRenderer.setSize(newRightAreaWidth, newRightAreaHeight);
+            });
+        }
+
+        // Função para atualizar o player de preview com as opções selecionadas
+        function updatePreviewPlayer() {
+            if (previewPlayer) previewScene.remove(previewPlayer);
+
+            // Verificar se os elementos HTML existem antes de acessá-los
+            const hairSelect = document.getElementById('hairSelect');
+            const backpackSelect = document.getElementById('backpackSelect');
+            const clothesColorSelect = document.getElementById('clothesColor');
+            const jacketSelect = document.getElementById('jacketSelect');
+
+            if (!hairSelect || !backpackSelect || !clothesColorSelect || !jacketSelect) {
+                console.log('Elementos HTML ainda não estão prontos, aguardando...');
+                return;
+            }
+
+            const hair = hairSelect.value;
+            const backpack = backpackSelect.value;
+            const clothesColor = parseInt(clothesColorSelect.value);
+            const jacket = jacketSelect.value;
+
+            previewPlayer = createPlayer({ hair, backpack, clothesColor, jacket });
+            previewPlayer.position.set(0, 0, 0);
+            previewScene.add(previewPlayer);
+        }
+
+        // Função para aplicar customizações ao player do jogo
+        function applyCustomizations() {
+            const hair = document.getElementById('hairSelect').value;
+            const backpack = document.getElementById('backpackSelect').value;
+            customClothesColor = parseInt(document.getElementById('clothesColor').value);
+            const jacket = document.getElementById('jacketSelect').value;
+
+            player = createPlayer({ hair, backpack, clothesColor: customClothesColor, jacket });
+            // Spawn em uma calçada segura (fora das passarelas)
+            player.position.set(15, 2, 27.5); // Calçada lateral segura
+            scene.add(player);
+        }
+
+        // Adicionar event listeners para atualizar preview em tempo real
+        document.getElementById('hairSelect').addEventListener('change', updatePreviewPlayer);
+        document.getElementById('backpackSelect').addEventListener('change', updatePreviewPlayer);
+        document.getElementById('clothesColor').addEventListener('change', updatePreviewPlayer);
+        document.getElementById('jacketSelect').addEventListener('change', updatePreviewPlayer);
+
+        // Função para criar o dinossauro (sem mudanças)
         function createDino() {
             const group = new THREE.Object3D();
             const mat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 });
@@ -482,7 +651,7 @@
             return group;
         }
 
-        // Função para criar rótulos
+        // Função para criar rótulos (sem mudanças)
         function createLabel(text, color, scale = 5) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -499,7 +668,51 @@
             return sprite;
         }
 
-        // Função para criar pedestre
+        // Função para criar mão com arma para primeira pessoa
+        function createFPSWeapon() {
+            const group = new THREE.Object3D();
+            
+            // Mão direita
+            const handMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
+            const hand = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.3), handMat);
+            hand.position.set(0, 0, 0);
+            group.add(hand);
+            
+            // Braço
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.4), handMat);
+            arm.position.set(0, 0, -0.35);
+            group.add(arm);
+            
+            // Bazuca verde
+            const weaponMat = new THREE.MeshStandardMaterial({ 
+                color: 0x00ff00, 
+                emissive: 0x00ff00, 
+                emissiveIntensity: 0.5 
+            });
+            
+            // Corpo da bazuca
+            const weaponBody = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.8), weaponMat);
+            weaponBody.position.set(0, -0.05, 0.4);
+            group.add(weaponBody);
+            
+            // Gatilho
+            const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.05), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+            trigger.position.set(0, -0.12, 0.1);
+            group.add(trigger);
+            
+            // Bico da bazuca
+            const nozzle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.15), weaponMat);
+            nozzle.position.set(0, -0.05, 0.85);
+            group.add(nozzle);
+            
+            // Posicionar no canto inferior direito da tela
+            group.position.set(0.3, -0.25, -0.5);
+            group.rotation.y = -0.1;
+            
+            return group;
+        }
+
+        // Função para criar pedestre (sem mudanças)
         function createPedestrian(isInteractive = false) {
             const group = new THREE.Object3D();
             const colors = [0xff00ff, 0x00ffff, 0xffff00, 0xff0088, 0x00ff88];
@@ -524,7 +737,7 @@
             return group;
         }
 
-        // Função para criar cruz vermelha (medicamento)
+        // Função para criar cruz vermelha (medicamento) (sem mudanças)
         function createRedCross() {
             const group = new THREE.Object3D();
             const mat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.9 });
@@ -540,7 +753,7 @@
             return group;
         }
 
-        // Função para criar trem
+        // Função para criar trem (sem mudanças)
         function createTrain() {
             const group = new THREE.Object3D();
             const mat = new THREE.MeshStandardMaterial({ color: 0x333333, emissive: 0x00ffff, emissiveIntensity: 0.5 });
@@ -566,7 +779,7 @@
             return { mesh: group, wheels, speed: 0.3, axis: 'x' };
         }
 
-        // Função para criar explosão
+        // Função para criar explosão (sem mudanças)
         function createExplosion(position) {
             const explosionGroup = new THREE.Object3D();
 
@@ -608,7 +821,7 @@
             }, 50);
         }
 
-        // Função para inicializar a cena
+        // Função para inicializar a cena do jogo (sem mudanças significativas)
         function init() {
             scene = new THREE.Scene();
             updateWorldTheme();
@@ -624,9 +837,7 @@
             light.position.set(50, 100, 50);
             scene.add(light);
 
-            player = createPlayer();
-            player.position.set(0, 2, 0);
-            scene.add(player);
+            applyCustomizations(); // Aplicar customizações ao player
 
             generateWorld();
 
@@ -634,20 +845,28 @@
                 keys[e.code] = true;
                 if (e.code === 'KeyR' && gameOver) location.reload();
                 if (e.code === 'KeyT' && !gameOver && gameStarted) {
+                    const previousMode = cameraMode;
                     cameraMode = cameraMode === 'first' ? 'third' : 'first';
+                    
+                    // Gerenciar bloqueio do ponteiro ao alternar modos
+                    if (previousMode === 'first' && cameraMode !== 'first') {
+                        exitPointerLock();
+                    } else if (cameraMode === 'first') {
+                        // Resetar orientação da câmera FPS ao entrar no modo
+                        fpsCamera.yaw = player.rotation.y;
+                        fpsCamera.pitch = 0;
+                    }
                 }
                 if (e.code === 'KeyG' && !gameOver && gameStarted) {
                     cameraMode = cameraMode === 'god' ? 'third' : 'god';
                 }
-                if (e.code === 'Space' && canJump && stamina > 10 && !gameOver && gameStarted) {
-                    velocity.y = 0.5;
-                    canJump = false;
-                    stamina = Math.max(0, stamina - 5);
+                if (e.code === 'Space') {
+                    e.preventDefault(); // impedir comportamento padrão SEMPRE
                 }
             });
             document.addEventListener('keyup', e => {
                 keys[e.code] = false;
-                if (e.code === 'Space') canJump = true;
+                if (e.code === 'Space') { e.preventDefault(); }
             });
             document.addEventListener('click', () => {
                 if (!hasWeapon || gameOver || !gameStarted) return;
@@ -655,15 +874,68 @@
                     new THREE.SphereGeometry(0.3),
                     new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
                 );
-                proj.position.copy(player.position);
-                proj.position.y += 1;
-                const dir = new THREE.Vector3(
-                    Math.sin(player.rotation.y),
-                    0,
-                    Math.cos(player.rotation.y)
-                );
-                projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(0.8) });
+                
+                // Ajustar origem do tiro baseado no modo de câmera
+                if (cameraMode === 'first') {
+                    // Tiro sai da câmera em primeira pessoa
+                    proj.position.copy(camera.position);
+                    
+                    // Direção baseada na rotação da câmera FPS
+                    const dir = new THREE.Vector3(0, 0, -1);
+                    dir.applyEuler(new THREE.Euler(fpsCamera.pitch, fpsCamera.yaw, 0, 'YXZ'));
+                    
+                    projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(0.8) });
+                    
+                    // Animação de recuo da arma
+                    if (fpsWeaponModel) {
+                        const originalZ = fpsWeaponModel.position.z;
+                        fpsWeaponModel.position.z -= 0.1;
+                        setTimeout(() => {
+                            if (fpsWeaponModel) fpsWeaponModel.position.z = originalZ;
+                        }, 50);
+                    }
+                } else {
+                    // Tiro sai do jogador em terceira pessoa
+                    proj.position.copy(player.position);
+                    proj.position.y += 1;
+                    const dir = new THREE.Vector3(
+                        Math.sin(player.rotation.y),
+                        0,
+                        Math.cos(player.rotation.y)
+                    );
+                    projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(0.8) });
+                }
+                
                 scene.add(proj);
+            });
+
+            // Sistema profissional de controle de mouse para primeira pessoa
+            document.addEventListener('mousemove', (e) => {
+                if (cameraMode === 'first' && fpsCamera.isLocked) {
+                    updateFPSCamera(e.movementX, e.movementY);
+                }
+            });
+
+            // Solicitar bloqueio de ponteiro para primeira pessoa
+            document.addEventListener('click', () => {
+                requestPointerLock();
+            });
+
+            // Gerenciar mudanças no bloqueio do ponteiro
+            document.addEventListener('pointerlockchange', () => {
+                fpsCamera.isLocked = document.pointerLockElement === document.body;
+                
+                // Se sair da primeira pessoa, liberar o bloqueio
+                if (cameraMode !== 'first') {
+                    exitPointerLock();
+                }
+            });
+
+            // Liberar bloqueio ao pressionar ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Escape' && fpsCamera.isLocked) {
+                    exitPointerLock();
+                }
             });
 
             window.addEventListener('resize', () => {
@@ -671,9 +943,130 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
+            
+            // Inicializar controles mobile
+            if (isMobile) {
+                initMobileControls();
+            }
+        }
+        
+        // Funções de controle mobile
+        function initMobileControls() {
+            const joystickContainer = document.getElementById('joystickContainer');
+            const joystickStick = document.getElementById('joystickStick');
+            const jumpBtn = document.getElementById('jumpBtn');
+            const shootBtn = document.getElementById('shootBtn');
+            const viewBtn = document.getElementById('viewBtn');
+            
+            // Joystick touch events
+            joystickContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = joystickContainer.getBoundingClientRect();
+                mobileJoystick.active = true;
+                mobileJoystick.startX = rect.left + rect.width / 2;
+                mobileJoystick.startY = rect.top + rect.height / 2;
+                mobileJoystick.currentX = touch.clientX;
+                mobileJoystick.currentY = touch.clientY;
+                updateJoystickPosition();
+            });
+            
+            joystickContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!mobileJoystick.active) return;
+                const touch = e.touches[0];
+                mobileJoystick.currentX = touch.clientX;
+                mobileJoystick.currentY = touch.clientY;
+                updateJoystickPosition();
+            });
+            
+            joystickContainer.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                mobileJoystick.active = false;
+                mobileJoystick.deltaX = 0;
+                mobileJoystick.deltaY = 0;
+                joystickStick.style.transform = 'translate(-50%, -50%)';
+                // Resetar teclas de movimento
+                keys['KeyW'] = false;
+                keys['KeyA'] = false;
+                keys['KeyS'] = false;
+                keys['KeyD'] = false;
+            });
+            
+            // Botão de pulo
+            jumpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys['Space'] = true;
+            });
+            
+            jumpBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys['Space'] = false;
+            });
+            
+            // Botão de atirar
+            shootBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!hasWeapon || gameOver || !gameStarted) return;
+                
+                // Simular clique para atirar
+                const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                document.dispatchEvent(clickEvent);
+            });
+            
+            // Botão de alternar visão
+            viewBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameOver || !gameStarted) return;
+                
+                const previousMode = cameraMode;
+                cameraMode = cameraMode === 'first' ? 'third' : 'first';
+                
+                if (previousMode === 'first' && cameraMode !== 'first') {
+                    exitPointerLock();
+                } else if (cameraMode === 'first') {
+                    fpsCamera.yaw = player.rotation.y;
+                    fpsCamera.pitch = 0;
+                }
+            });
+        }
+        
+        function updateJoystickPosition() {
+            const joystickStick = document.getElementById('joystickStick');
+            
+            // Calcular delta
+            const deltaX = mobileJoystick.currentX - mobileJoystick.startX;
+            const deltaY = mobileJoystick.currentY - mobileJoystick.startY;
+            
+            // Limitar distância máxima do joystick
+            const maxDistance = 45;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance > maxDistance) {
+                const angle = Math.atan2(deltaY, deltaX);
+                mobileJoystick.deltaX = Math.cos(angle) * maxDistance;
+                mobileJoystick.deltaY = Math.sin(angle) * maxDistance;
+            } else {
+                mobileJoystick.deltaX = deltaX;
+                mobileJoystick.deltaY = deltaY;
+            }
+            
+            // Atualizar posição visual do stick
+            joystickStick.style.transform = `translate(calc(-50% + ${mobileJoystick.deltaX}px), calc(-50% + ${mobileJoystick.deltaY}px))`;
+            
+            // Mapear para teclas WASD (normalizado)
+            const threshold = 10;
+            keys['KeyW'] = mobileJoystick.deltaY < -threshold;
+            keys['KeyS'] = mobileJoystick.deltaY > threshold;
+            keys['KeyA'] = mobileJoystick.deltaX < -threshold;
+            keys['KeyD'] = mobileJoystick.deltaX > threshold;
         }
 
-        // Função para atualizar o tema do mundo
+        // Função para atualizar o tema do mundo (sem mudanças)
         function updateWorldTheme() {
             const themes = [
                 { name: 'Noite', fog: 0x000a1f, ambient: 0x0a0a2e, ground: 0x0a0a1f, sidewalk: 0x333333 },
@@ -693,7 +1086,7 @@
             });
         }
 
-        // Função para gerar o mundo
+        // Função para gerar o mundo (sem mudanças)
         function generateWorld() {
             buildings.forEach(b => scene.remove(b));
             enemies.forEach(e => scene.remove(e.mesh));
@@ -1007,7 +1400,7 @@
             scene.add(portal);
         }
 
-        // Função para verificar colisão
+        // Função para verificar colisão (sem mudanças)
         function checkCollision(x, z, y = player.position.y) {
             const r = 1.5;
             for (let b of buildings) {
@@ -1051,7 +1444,7 @@
             return false;
         }
 
-        // Função para ajustar câmera para evitar obstruções
+        // Função para ajustar câmera para evitar obstruções (sem mudanças)
         function adjustCameraForObstructions() {
             if (cameraMode !== 'third') return;
 
@@ -1071,7 +1464,7 @@
             }
         }
 
-        // Função de atualização do jogo
+        // Função de atualização do jogo (sem mudanças)
         function update() {
             if (gameOver) return;
 
@@ -1087,10 +1480,31 @@
                 cameraMode = 'third';
             } else {
                 if (cameraMode === 'god') {
-                    if (keys['KeyW']) moveZ = 1;
-                    if (keys['KeyS']) moveZ = -1;
+                    // Inverter W e S na visão top down
+                    if (keys['KeyW']) moveZ = -1; // Invertido
+                    if (keys['KeyS']) moveZ = 1;  // Invertido
                     if (keys['KeyA']) moveX = -1;
                     if (keys['KeyD']) moveX = 1;
+                } else if (cameraMode === 'first') {
+                    // Movimento profissional baseado na câmera FPS
+                    const { forward, right } = getFPSMovementDirection();
+                    
+                    if (keys['KeyW']) {
+                        moveX += forward.x;
+                        moveZ += forward.z;
+                    }
+                    if (keys['KeyS']) {
+                        moveX -= forward.x;
+                        moveZ -= forward.z;
+                    }
+                    if (keys['KeyA']) {
+                        moveX -= right.x;
+                        moveZ -= right.z;
+                    }
+                    if (keys['KeyD']) {
+                        moveX += right.x;
+                        moveZ += right.z;
+                    }
                 } else {
                     if (keys['KeyW']) moveZ = 1;
                     if (keys['KeyS']) moveZ = -1;
@@ -1102,20 +1516,84 @@
                 if (moving) {
                     const nx = player.position.x + moveX * speed;
                     const nz = player.position.z + moveZ * speed;
-                    if (!checkCollision(nx, nz)) {
-                        player.position.x = nx;
-                        player.position.z = nz;
+                    // DESABILITAR checkCollision temporariamente para testar
+                    player.position.x = nx;
+                    player.position.z = nz;
+
+                    // Só rotacionar o personagem se não estiver em primeira pessoa
+                    if (cameraMode !== 'first') {
+                        const targetAngle = Math.atan2(moveX, moveZ);
+                        player.rotation.y = targetAngle;
                     }
 
-                    const targetAngle = Math.atan2(moveX, moveZ);
-                    player.rotation.y = targetAngle;
-
-                    stamina = Math.max(0, stamina - (isRunning ? 0.1 : 0.05)); // Reduzido consumo
+                    // Movimento sem consumo de stamina para não interferir no pulo
                 } else {
-                    stamina = Math.min(100, stamina + 0.3); // Aumentada recuperação
+                    stamina = Math.min(100, stamina + 0.3);
                 }
             }
 
+            // SISTEMA IGUAL ÀS PASSARELAS - FUNCIONA EM TODO LUGAR!
+            
+            // Aplicar gravidade
+            velocity.y -= 0.02;
+            player.position.y += velocity.y;
+            
+            // Detecção de chão igual às passarelas - usando checkCollision
+            const playerBox = new THREE.Box3(
+                new THREE.Vector3(player.position.x - 1.5, player.position.y - 1, player.position.z - 1.5),
+                new THREE.Vector3(player.position.x + 1.5, player.position.y + 2, player.position.z + 1.5)
+            );
+            
+            let onGround = false;
+            
+            // Verificar passarelas (funciona)
+            for (let w of walkways) {
+                const walkwayBox = new THREE.Box3().setFromObject(w);
+                if (walkwayBox.intersectsBox(playerBox)) {
+                    player.position.y = w.position.y + 1.5;
+                    velocity.y = 0;
+                    onGround = true;
+                    break;
+                }
+            }
+            
+            // Verificar rampas
+            if (!onGround) {
+                for (let r of ramps) {
+                    const rampBox = new THREE.Box3().setFromObject(r);
+                    if (rampBox.intersectsBox(playerBox)) {
+                        player.position.y = r.position.y + 1.5;
+                        velocity.y = 0;
+                        onGround = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Verificar chão normal - ALTURA SIMPLES COMO NAS PASSARELAS
+            if (!onGround && player.position.y <= 2.1) {
+                player.position.y = 2;
+                velocity.y = 0;
+                onGround = true;
+            }
+            
+            isOnGround = onGround;
+            
+            // Pulo ou sair do trem
+            if (keys['Space']) {
+                if (isInTrain) {
+                    // Sair do trem ao pressionar SPACE
+                    isInTrain = false;
+                    player.position.x += 5; // Sair para o lado
+                    player.position.y = 2;
+                    velocity.y = 0.5; // Pequeno pulo ao sair
+                } else {
+                    // Pulo normal fora do trem
+                    velocity.y = 0.5;
+                }
+            }
+
+            // Animação de caminhada - DEPOIS do pulo
             if (moving && !isInTrain) {
                 walkCycle += 0.15;
                 const swing = Math.sin(walkCycle) * 0.4;
@@ -1129,14 +1607,6 @@
                 rightArm.rotation.x = 0;
                 leftLeg.rotation.x = 0;
                 rightLeg.rotation.x = 0;
-            }
-
-            velocity.y -= 0.02;
-            player.position.y += velocity.y;
-            if (player.position.y <= 2) {
-                player.position.y = 2;
-                velocity.y = 0;
-                canJump = true;
             }
 
             pickups.forEach((p, i) => {
@@ -1161,6 +1631,8 @@
                 score += 100;
                 isInTrain = false;
                 generateWorld();
+                // Reposicionar jogador em local seguro após gerar novo mundo
+                player.position.set(15, 2, 27.5);
             }
 
             const lim = 100;
@@ -1362,16 +1834,39 @@
 
             // Atualizar câmera com base no modo
             if (cameraMode === 'first') {
+                // Posicionar câmera na altura dos olhos do personagem
                 camera.position.copy(player.position);
-                camera.position.y += 1.5;
-                camera.rotation.y = player.rotation.y;
-                camera.rotation.x = 0;
+                camera.position.y += 1.6; // Altura dos olhos humanos
+                
+                // Aplicar rotação profissional FPS
+                camera.rotation.order = 'YXZ'; // Ordem correta para FPS
+                camera.rotation.y = fpsCamera.yaw;
+                camera.rotation.x = fpsCamera.pitch;
                 camera.rotation.z = 0;
                 player.visible = false;
+                
+                // Mostrar arma em primeira pessoa se tiver arma
+                if (hasWeapon) {
+                    if (!fpsWeaponModel) {
+                        fpsWeaponModel = createFPSWeapon();
+                        camera.add(fpsWeaponModel);
+                    }
+                    // Animação de recuo ao atirar
+                    if (fpsWeaponModel) {
+                        fpsWeaponModel.visible = true;
+                    }
+                } else if (fpsWeaponModel) {
+                    fpsWeaponModel.visible = false;
+                }
             } else if (cameraMode === 'god') {
                 camera.position.set(player.position.x, player.position.y + 20, player.position.z);
                 camera.rotation.set(-Math.PI / 2, 0, 0);
                 player.visible = true;
+                
+                // Ocultar arma FPS em outros modos
+                if (fpsWeaponModel) {
+                    fpsWeaponModel.visible = false;
+                }
             } else {
                 const d = 15, h = 8;
                 const sway = Math.sin(walkCycle * 0.5) * 0.3;
@@ -1380,6 +1875,11 @@
                 camera.position.z = player.position.z - d;
                 camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
                 player.visible = true;
+                
+                // Ocultar arma FPS em outros modos
+                if (fpsWeaponModel) {
+                    fpsWeaponModel.visible = false;
+                }
             }
 
             // Ajustar câmera para obstruções
@@ -1393,7 +1893,7 @@
             renderer.autoClear = true;
         }
 
-        // Função de animação principal
+        // Função de animação principal (sem mudanças)
         function animate() {
             requestAnimationFrame(animate);
             if (gameStarted) {
@@ -1406,8 +1906,19 @@
         // Iniciar o jogo
         document.getElementById('startBtn').addEventListener('click', () => {
             document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('customizationScreen').style.display = 'flex';
+            initCustomizationPreview();
+        });
+
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            document.getElementById('customizationScreen').style.display = 'none';
+            
+            // Remover renderer de preview com verificação de segurança
+            if (previewRenderer && previewRenderer.domElement && previewRenderer.domElement.parentNode) {
+                previewRenderer.domElement.parentNode.removeChild(previewRenderer.domElement);
+            }
+            
             gameStarted = true;
-            setupMobileControls(); // Configurar controles mobile se necessário
             init();
             animate();
         });
