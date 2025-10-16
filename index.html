@@ -7,18 +7,26 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div id="startScreen">
+    <div id="roomScreen">
         <h1>CYBERPUNK SURVIVAL</h1>
-        <p style="margin-bottom: 20px;">Encontre suprimentos e sobreviva aos monstros!</p>
-        <button id="startBtn">INICIAR</button>
+        <div id="room-options">
+            <button id="createRoomBtn">Criar Sala</button>
+            <div id="join-room-container">
+                <input type="text" id="roomIdInput" placeholder="ID da Sala">
+                <button id="joinRoomBtn">Entrar</button>
+            </div>
+            <div id="roomIdDisplay"></div>
+        </div>
     </div>
-    <div id="hud">
+
+    <div id="hud" style="display: none;">
         <div>VIDA: <span id="health">100</span></div>
         <div>STAMINA: <span id="stamina">100</span></div>
         <div>SCORE: <span id="score">0</span></div>
         <div>FASE: <span id="level">1</span></div>
         <div>ARMA: <span id="weapon">Nenhuma</span></div>
     </div>
+
     <div id="gameOver">
         <div>GAME OVER</div>
         <div style="font-size: 24px; margin-top: 20px;">Pressione R para reiniciar</div>
@@ -44,6 +52,7 @@
         <div class="control-button" id="btnCamera">👁</div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/main.js"></script>
 </body>

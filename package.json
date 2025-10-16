@@ -1,0 +1,25 @@
+{
+  "name": "monstersincity",
+  "version": "1.0.0",
+  "description": "Um jogo 3D de sobrevivência em um ambiente cyberpunk, construído com **Three.js**. O jogo é executado diretamente no navegador, sem a necessidade de instalação.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hemanzcode/monstersInCity.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hemanzcode/monstersInCity/issues"
+  },
+  "homepage": "https://github.com/hemanzcode/monstersInCity#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
