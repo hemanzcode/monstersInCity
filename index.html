@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cyberpunk Survival</title>
     <style>
         * {
@@ -97,6 +97,183 @@
             color: #000;
             box-shadow: 0 0 20px #0ff;
         }
+        #customizationScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 250;
+            color: #0ff;
+            text-shadow: 0 0 20px #0ff;
+            padding: 0 50px;
+        }
+        #customizationScreen h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .customization-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 50px;
+        }
+        .customization-right {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-section {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .custom-section label {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .custom-section select, .custom-section button {
+            font-size: 18px;
+            padding: 5px 10px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px #0ff;
+            transition: all 0.3s;
+        }
+        .custom-section select:hover, .custom-section button:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 10px #0ff;
+        }
+        #confirmBtn {
+            font-size: 24px;
+            padding: 15px 40px;
+            margin-top: 20px;
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px #0ff;
+            transition: all 0.3s;
+        }
+        #confirmBtn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff;
+        }
+        
+        /* Controles Mobile */
+        #mobileControls {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 150;
+        }
+        
+        /* Joystick Virtual */
+        #joystickContainer {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 150px;
+            height: 150px;
+            pointer-events: auto;
+        }
+        
+        #joystickBase {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: 3px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        #joystickStick {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.6);
+            border: 2px solid #0ff;
+            box-shadow: 0 0 15px #0ff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+        }
+        
+        /* Botões de Ação */
+        #actionButtons {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            border: 3px solid #0ff;
+            color: #0ff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 64px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            font-family: 'Courier New', monospace;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .action-btn:active {
+            background: rgba(0, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+        
+        /* Botão de Disparo Grande */
+        #shootBtn {
+            width: 80px;
+            height: 80px;
+            line-height: 74px;
+            font-size: 16px;
+        }
+        
+        /* Detectar Mobile */
+        @media (max-width: 768px), (pointer: coarse) {
+            #mobileControls {
+                display: block;
+            }
+            
+            #instructions {
+                display: none;
+            }
+            
+            #hud {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -163,6 +340,22 @@
         WASD: Mover | Espaço: Pular/Sair do trem | Clique: Atirar | T: Alternar visão | G: Visão aérea | ESC: Sair da primeira pessoa | Portal Azul = Próxima fase
     </div>
     <div id="crosshair"></div>
+    
+    <!-- Controles Mobile -->
+    <div id="mobileControls">
+        <!-- Joystick Virtual -->
+        <div id="joystickContainer">
+            <div id="joystickBase"></div>
+            <div id="joystickStick"></div>
+        </div>
+        
+        <!-- Botões de Ação -->
+        <div id="actionButtons">
+            <div class="action-btn" id="jumpBtn">PULAR</div>
+            <div class="action-btn" id="shootBtn">ATIRAR</div>
+            <div class="action-btn" id="viewBtn">VISÃO</div>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -180,9 +373,75 @@
         let isInTrain = false;
         let raycaster = new THREE.Raycaster();
         let cameraOffset = 0; // Para ajustar altura da câmera em caso de obstrução
+        let fpsWeaponModel = null; // Modelo da arma para primeira pessoa
+        
+        // Sistema profissional de câmera primeira pessoa
+        let fpsCamera = {
+            yaw: 0,           // Rotação horizontal (esquerda/direita)
+            pitch: 0,         // Rotação vertical (cima/baixo)
+            isLocked: false,  // Se o mouse está bloqueado
+            sensitivity: 0.002, // Sensibilidade do mouse
+            maxPitch: Math.PI / 2 - 0.1, // Limite máximo de inclinação
+            minPitch: -Math.PI / 2 + 0.1  // Limite mínimo de inclinação
+        };
 
-        // Função para criar o jogador
-        function createPlayer() {
+        // Variáveis para customização
+        let previewScene, previewCamera, previewRenderer, previewPlayer;
+        let customHair, customBackpack, customJacket;
+        let customClothesColor = 0x00aaff;
+        
+        // Controles Mobile
+        let mobileJoystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            deltaX: 0,
+            deltaY: 0
+        };
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Função para atualizar a orientação da câmera FPS
+        function updateFPSCamera(deltaX, deltaY) {
+            if (!fpsCamera.isLocked) return;
+            
+            // Atualizar yaw (rotação horizontal)
+            fpsCamera.yaw -= deltaX * fpsCamera.sensitivity;
+            
+            // Atualizar pitch (rotação vertical) com limitações
+            fpsCamera.pitch -= deltaY * fpsCamera.sensitivity;
+            fpsCamera.pitch = Math.max(fpsCamera.minPitch, Math.min(fpsCamera.maxPitch, fpsCamera.pitch));
+        }
+
+        // Função para calcular direção de movimento baseada na câmera FPS
+        function getFPSMovementDirection() {
+            const forward = new THREE.Vector3(0, 0, -1); // usar -Z como frente
+            const right = new THREE.Vector3(1, 0, 0);
+            
+            // Aplicar rotação yaw (horizontal)
+            forward.applyEuler(new THREE.Euler(0, fpsCamera.yaw, 0));
+            right.applyEuler(new THREE.Euler(0, fpsCamera.yaw, 0));
+            
+            return { forward, right };
+        }
+
+        // Função para solicitar bloqueio do ponteiro
+        function requestPointerLock() {
+            if (cameraMode === 'first' && !fpsCamera.isLocked) {
+                document.body.requestPointerLock();
+            }
+        }
+
+        // Função para liberar bloqueio do ponteiro
+        function exitPointerLock() {
+            if (fpsCamera.isLocked) {
+                document.exitPointerLock();
+            }
+        }
+
+        // Função para criar o jogador (agora com opções de customização)
+        function createPlayer(customOptions = {}) {
             const group = new THREE.Object3D();
             const bodyMat = new THREE.MeshStandardMaterial({ color: customOptions.clothesColor || 0x00aaff, emissive: 0x003366, emissiveIntensity: 0.44 }); // Aumentado de 0.2 para 0.44 (120% mais brilho)
 
@@ -1660,7 +1919,6 @@
             }
             
             gameStarted = true;
-            setupMobileControls(); // Configurar controles mobile se necessário
             init();
             animate();
         });
