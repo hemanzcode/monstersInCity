@@ -4,7 +4,7 @@
   "description": "Um jogo 3D de sobrevivência em um ambiente cyberpunk, construído com **Three.js**. O jogo é executado diretamente no navegador, sem a necessidade de instalação.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -21,5 +21,9 @@
   "dependencies": {
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "socket.io-client": "^4.8.1"
   }
 }

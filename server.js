@@ -48,6 +48,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('playerShoot', (data) => {
+        const roomId = Object.keys(socket.rooms).find(r => r !== socket.id);
+        if (roomId) {
+            socket.to(roomId).broadcast.emit('playerShot', { id: socket.id, ...data });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('Um jogador se desconectou:', socket.id);
         const roomId = Object.keys(socket.rooms).find(r => r !== socket.id);
@@ -62,7 +69,11 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+        console.log(`Servidor rodando na porta ${PORT}`);
+    });
+}
+
+module.exports = { server, io, rooms };
