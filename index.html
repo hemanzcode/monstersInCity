@@ -373,7 +373,7 @@
             <div id="weapon-0" class="weapon-slot available selected" style="border: 2px solid #00d4ff; padding: 10px; text-align: center; background: rgba(0, 212, 255, 0.1);">
                 <div style="color: #00d4ff; font-weight: bold;">Laser Gun</div>
                 <div class="icon icon-laser"></div>
-                <div class="ammo">∞</div>
+                <div class="ammo">100/100</div>
             </div>
             <div id="weapon-1" class="weapon-slot" style="border: 2px solid #666; padding: 10px; text-align: center; background: rgba(0, 0, 0, 0.5);">
                 <div style="color: #666; font-weight: bold;">Granadas</div>
@@ -424,7 +424,7 @@
         let safeZone, portal;
         let health = 100, stamina = 100, score = 0, level = 1, hasWeapon = false;
         let gameOver = false, gameStarted = false;
-        let gameTimer = 600; // 10 minutos em segundos
+        let gameTimer = 360; // 6 minutos em segundos
         let lastSpawnTime = 0;
         let keys = {}, velocity = new THREE.Vector3();
         let isOnGround = true, walkCycle = 0;
@@ -450,6 +450,7 @@
         let spawnTimer = 0;
         let nextSpawnDelay = 8; // segundos
         let maxConcurrentEnemies = 12;
+        let roundEnded = false;
 
         // Sistema de armas e inventário
         let currentWeapon = 0; // 0 = Laser Gun (infinita), 1 = Granada, 2 = Mina, 3 = Lança-chamas, 4 = Bazuca de energia
@@ -3039,22 +3040,32 @@
             
             // Atualizar cronômetro
             gameTimer -= 1/60; // Assumindo 60 FPS
-            if (gameTimer <= 0) {
+            // Encerrar antecipadamente se todos os inimigos morrerem
+            const aliveNow = enemies.filter(e => !e.isDead).length;
+            if (!roundEnded && aliveNow === 0) {
+                roundEnded = true;
+                alert('Você sobreviveu!');
+                gameTimer = 360;
+                spawnPlayer();
+            }
+
+            if (gameTimer <= 0 && !roundEnded) {
                 // Fim de rodada: avaliar vencedor e reset leve
                 const remaining = enemies.filter(e => !e.isDead).length;
                 let message = '';
                 if (remaining === 0) {
                     // Limparam a fase: parceiro vira hostil
                     partnerHostile = true;
-                    message = 'Todos os bichos mortos: parceiro virou inimigo!';
+                    message = 'Você sobreviveu!';
                 } else {
                     // Mostrar placar
                     message = `Tempo esgotado. Player ${playerKills} x ${partnerKills} Partner`;
                 }
                 alert(message);
                 // Reset timer e respawn leve
-                gameTimer = 600;
+                gameTimer = 360;
                 spawnPlayer();
+                roundEnded = true;
             }
             
             // Atualizar display do cronômetro
@@ -3387,6 +3398,10 @@
                 if (d < 3) {
                     if (p.type === 'weapon') {
                         hasWeapon = true;
+                        // Recarregar Laser Gun: +20 até o máximo 100
+                        ammo.laser = Math.min(weapons[0].maxAmmo, ammo.laser + 20);
+                        const slot0 = document.querySelector('#weapon-0 .ammo');
+                        if (slot0) slot0.textContent = `${ammo.laser}/${weapons[0].maxAmmo}`;
                         document.getElementById('weapon').textContent = 'Laser Gun';
                         score += 50;
                     } else if (p.type === 'health') {
