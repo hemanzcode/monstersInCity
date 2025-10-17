@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyberpunk Survival</title>
+    <title>Alien: Spaceship Survival</title>
     <style>
         * {
             margin: 0;
@@ -278,8 +278,8 @@
 </head>
 <body>
     <div id="startScreen">
-        <h1>CYBERPUNK SURVIVAL</h1>
-        <p style="margin-bottom: 20px;">Encontre suprimentos e sobreviva aos monstros!</p>
+        <h1>ALIEN: SPACESHIP SURVIVAL</h1>
+        <p style="margin-bottom: 20px;">Sobreviva aos Xenomorphs na espaçonave infectada! Encontre suprimentos e escape!</p>
         <button id="startBtn">INICIAR</button>
     </div>
     <div id="customizationScreen">
@@ -337,7 +337,35 @@
         <div style="font-size: 24px; margin-top: 20px;">Pressione R para reiniciar</div>
     </div>
     <div id="instructions">
-        WASD: Mover | Espaço: Pular/Sair do trem | Clique: Atirar | T: Alternar visão | G: Visão aérea | ESC: Sair da primeira pessoa | Portal Azul = Próxima fase
+        WASD: Mover | Espaço: Pular | Clique: Atirar | T: Alternar visão | G: Visão aérea | Q: Inventário | ESC: Sair da primeira pessoa | Escape Pod = Próxima fase
+    </div>
+    
+    <!-- Interface de Inventário -->
+    <div id="inventory" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); border: 2px solid #00d4ff; padding: 20px; z-index: 200;">
+        <h3 style="color: #00d4ff; text-align: center; margin-bottom: 20px;">INVENTÁRIO DE ARMAS</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 300px;">
+            <div id="weapon-0" class="weapon-slot" style="border: 2px solid #00d4ff; padding: 10px; text-align: center; background: rgba(0, 212, 255, 0.1);">
+                <div style="color: #00d4ff; font-weight: bold;">Laser Gun</div>
+                <div style="color: #ffffff;">∞</div>
+            </div>
+            <div id="weapon-1" class="weapon-slot" style="border: 2px solid #666; padding: 10px; text-align: center; background: rgba(0, 0, 0, 0.5);">
+                <div style="color: #666; font-weight: bold;">Granadas</div>
+                <div style="color: #666;">0/5</div>
+            </div>
+            <div id="weapon-2" class="weapon-slot" style="border: 2px solid #666; padding: 10px; text-align: center; background: rgba(0, 0, 0, 0.5);">
+                <div style="color: #666; font-weight: bold;">Minas</div>
+                <div style="color: #666;">0/5</div>
+            </div>
+            <div id="weapon-3" class="weapon-slot" style="border: 2px solid #666; padding: 10px; text-align: center; background: rgba(0, 0, 0, 0.5);">
+                <div style="color: #666; font-weight: bold;">Lança-chamas</div>
+                <div style="color: #666;">0/5</div>
+            </div>
+            <div id="weapon-4" class="weapon-slot" style="border: 2px solid #666; padding: 10px; text-align: center; background: rgba(0, 0, 0, 0.5);">
+                <div style="color: #666; font-weight: bold;">Bazuca Plasma</div>
+                <div style="color: #666;">0/5</div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 15px; color: #00d4ff;">Pressione Q para fechar</div>
     </div>
     <div id="crosshair"></div>
     
@@ -374,6 +402,20 @@
         let raycaster = new THREE.Raycaster();
         let cameraOffset = 0; // Para ajustar altura da câmera em caso de obstrução
         let fpsWeaponModel = null; // Modelo da arma para primeira pessoa
+
+        // Sistema de armas e inventário
+        let currentWeapon = 0; // 0 = Laser Gun (infinita), 1 = Granada, 2 = Mina, 3 = Lança-chamas, 4 = Bazuca de energia
+        let weapons = [
+            { name: 'Laser Gun', ammo: -1, maxAmmo: -1, damage: 1, type: 'laser' }, // -1 = infinita
+            { name: 'Granada', ammo: 0, maxAmmo: 5, damage: 3, type: 'explosive' },
+            { name: 'Mina', ammo: 0, maxAmmo: 5, damage: 2, type: 'mine' },
+            { name: 'Lança-chamas', ammo: 0, maxAmmo: 5, damage: 2, type: 'flame' },
+            { name: 'Bazuca Plasma', ammo: 0, maxAmmo: 5, damage: 4, type: 'plasma' }
+        ];
+        let showInventory = false;
+        let doors = []; // Sistema de portas
+        let elevators = []; // Sistema de elevadores
+        let boss = null; // Boss do jogo
         
         // Sistema profissional de câmera primeira pessoa
         let fpsCamera = {
@@ -602,8 +644,8 @@
             const jacket = document.getElementById('jacketSelect').value;
 
             player = createPlayer({ hair, backpack, clothesColor: customClothesColor, jacket });
-            // Spawn em uma calçada segura (fora das passarelas)
-            player.position.set(15, 2, 27.5); // Calçada lateral segura
+            // Spawn na espaçonave
+            player.position.set(0, 2, 0); // Centro da espaçonave
             scene.add(player);
         }
 
@@ -613,40 +655,196 @@
         document.getElementById('clothesColor').addEventListener('change', updatePreviewPlayer);
         document.getElementById('jacketSelect').addEventListener('change', updatePreviewPlayer);
 
-        // Função para criar o dinossauro (sem mudanças)
-        function createDino() {
+        // Função para criar Xenomorph (Alien)
+        function createXenomorph() {
             const group = new THREE.Object3D();
-            const mat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 });
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: 0x000000, 
+                emissive: 0x004400, 
+                emissiveIntensity: 0.3,
+                roughness: 0.9,
+                metalness: 0.1
+            });
 
-            const body = new THREE.Mesh(new THREE.BoxGeometry(3, 2.25, 1.5), mat);
-            body.position.y = 1.125;
+            // Corpo principal - mais alongado e orgânico
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2, 4), bodyMat);
+            body.position.y = 1;
             group.add(body);
 
-            const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.8), mat);
-            head.position.set(0, 1.5, 1.8);
+            // Cabeça alongada característica do Alien
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 2.5), bodyMat);
+            head.position.set(0, 1.5, 2.8);
+            head.rotation.x = -0.1;
             group.add(head);
 
-            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 3), mat);
-            tail.position.set(0, 1.05, -2.25);
-            tail.rotation.x = -0.3;
+            // Crânio alongado
+            const skull = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 2), bodyMat);
+            skull.position.set(0, 2.2, 3.5);
+            group.add(skull);
+
+            // Cauda longa e flexível
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 4), bodyMat);
+            tail.position.set(0, 0.8, -3);
+            tail.rotation.x = 0.2;
             group.add(tail);
 
-            const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.5, 0.45), mat);
-            leg1.position.set(-0.9, 0, -0.75);
-            group.add(leg1);
+            // Pernas dianteiras mais longas
+            const frontLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2, 0.3), bodyMat);
+            frontLeg1.position.set(-0.8, 0, 1);
+            group.add(frontLeg1);
 
-            const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.5, 0.45), mat);
-            leg2.position.set(0.9, 0, -0.75);
-            group.add(leg2);
+            const frontLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2, 0.3), bodyMat);
+            frontLeg2.position.set(0.8, 0, 1);
+            group.add(frontLeg2);
 
-            const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 1 });
-            const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.22), eyeMat);
-            eye1.position.set(-0.375, 1.8, 2.55);
+            // Pernas traseiras
+            const backLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.3), bodyMat);
+            backLeg1.position.set(-0.8, 0, -1.5);
+            group.add(backLeg1);
+
+            const backLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.3), bodyMat);
+            backLeg2.position.set(0.8, 0, -1.5);
+            group.add(backLeg2);
+
+            // Olhos brilhantes (sem íris)
+            const eyeMat = new THREE.MeshStandardMaterial({ 
+                color: 0x000000, 
+                emissive: 0x00ff00, 
+                emissiveIntensity: 0.8 
+            });
+            const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.15), eyeMat);
+            eye1.position.set(-0.25, 2.1, 4.2);
             group.add(eye1);
 
-            const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.22), eyeMat);
-            eye2.position.set(0.375, 1.8, 2.55);
+            const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.15), eyeMat);
+            eye2.position.set(0.25, 2.1, 4.2);
             group.add(eye2);
+
+            // Mandíbula interna (dentes)
+            const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.8), bodyMat);
+            jaw.position.set(0, 1.2, 4.5);
+            group.add(jaw);
+
+            return group;
+        }
+
+        // Função para criar Facehugger (menor)
+        function createFacehugger() {
+            const group = new THREE.Object3D();
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a, 
+                emissive: 0x004400, 
+                emissiveIntensity: 0.2 
+            });
+
+            // Corpo pequeno e achatado
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1, 0.3, 1), bodyMat);
+            body.position.y = 0.15;
+            group.add(body);
+
+            // Pernas longas e finas
+            for (let i = 0; i < 8; i++) {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 0.1), bodyMat);
+                const angle = (i / 8) * Math.PI * 2;
+                leg.position.set(
+                    Math.cos(angle) * 0.6,
+                    0.4,
+                    Math.sin(angle) * 0.6
+                );
+                group.add(leg);
+            }
+
+            // Cauda longa
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 1.5), bodyMat);
+            tail.position.set(0, 0.15, -0.8);
+            group.add(tail);
+
+            return group;
+        }
+
+        // Função para criar Boss (Alien Queen)
+        function createAlienBoss() {
+            const group = new THREE.Object3D();
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: 0x000000, 
+                emissive: 0x004400, 
+                emissiveIntensity: 0.4,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+
+            // Corpo principal - muito maior que Xenomorph normal
+            const body = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 6), bodyMat);
+            body.position.y = 1.5;
+            group.add(body);
+
+            // Cabeça massiva
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 3.5), bodyMat);
+            head.position.set(0, 2.5, 4);
+            head.rotation.x = -0.1;
+            group.add(head);
+
+            // Crânio alongado ainda maior
+            const skull = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2, 2.5), bodyMat);
+            skull.position.set(0, 3.5, 5.5);
+            group.add(skull);
+
+            // Cauda gigante
+            const tail = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 6), bodyMat);
+            tail.position.set(0, 1.5, -4);
+            tail.rotation.x = 0.3;
+            group.add(tail);
+
+            // Pernas dianteiras enormes
+            const frontLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.5, 0.5), bodyMat);
+            frontLeg1.position.set(-1.5, 0, 2);
+            group.add(frontLeg1);
+
+            const frontLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.5, 0.5), bodyMat);
+            frontLeg2.position.set(1.5, 0, 2);
+            group.add(frontLeg2);
+
+            // Pernas traseiras
+            const backLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3, 0.5), bodyMat);
+            backLeg1.position.set(-1.5, 0, -2);
+            group.add(backLeg1);
+
+            const backLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3, 0.5), bodyMat);
+            backLeg2.position.set(1.5, 0, -2);
+            group.add(backLeg2);
+
+            // Olhos vermelhos brilhantes (diferentes dos Xenomorphs normais)
+            const eyeMat = new THREE.MeshStandardMaterial({ 
+                color: 0x000000, 
+                emissive: 0xff0000, 
+                emissiveIntensity: 1 
+            });
+            const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.25), eyeMat);
+            eye1.position.set(-0.5, 3.8, 6.5);
+            group.add(eye1);
+
+            const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.25), eyeMat);
+            eye2.position.set(0.5, 3.8, 6.5);
+            group.add(eye2);
+
+            // Mandíbula interna gigante
+            const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), bodyMat);
+            jaw.position.set(0, 2, 6.8);
+            group.add(jaw);
+
+            // Chifres/cristas na cabeça
+            for (let i = 0; i < 5; i++) {
+                const horn = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.2, 1, 6),
+                    new THREE.MeshStandardMaterial({ 
+                        color: 0x000000, 
+                        emissive: 0x004400, 
+                        emissiveIntensity: 0.6 
+                    })
+                );
+                horn.position.set(-0.8 + i * 0.4, 4.5, 5);
+                group.add(horn);
+            }
 
             return group;
         }
@@ -666,6 +864,116 @@
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
             sprite.scale.set(scale, scale / 4, 1);
             return sprite;
+        }
+
+        // Função para criar portas
+        function createDoor(x, y, z, width = 2, height = 4, thickness = 0.2, isOpen = false) {
+            const doorGroup = new THREE.Object3D();
+            
+            // Porta
+            const door = new THREE.Mesh(
+                new THREE.BoxGeometry(width, height, thickness),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x2a2a2a,
+                    emissive: 0x004400,
+                    emissiveIntensity: 0.1
+                })
+            );
+            door.position.set(x, y + height/2, z);
+            doorGroup.add(door);
+
+            // Moldura da porta
+            const frame = new THREE.Mesh(
+                new THREE.BoxGeometry(width + 0.4, height + 0.4, 0.1),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x1a1a1a,
+                    emissive: 0x004400,
+                    emissiveIntensity: 0.05
+                })
+            );
+            frame.position.set(x, y + height/2, z - 0.05);
+            doorGroup.add(frame);
+
+            // Botão para abrir/fechar
+            const button = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x00ff00,
+                    emissive: 0x00ff00,
+                    emissiveIntensity: 0.8
+                })
+            );
+            button.position.set(x + width/2 + 0.5, y + height/2, z);
+            doorGroup.add(button);
+
+            doorGroup.door = door;
+            doorGroup.button = button;
+            doorGroup.isOpen = isOpen;
+            doorGroup.originalX = x;
+            doorGroup.width = width;
+
+            return doorGroup;
+        }
+
+        // Função para criar elevadores funcionais
+        function createFunctionalElevator(x, z, isOnFirstFloor = true) {
+            const elevatorGroup = new THREE.Object3D();
+            
+            // Poço do elevador
+            const shaft = new THREE.Mesh(
+                new THREE.BoxGeometry(4, 20, 4),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x2a2a2a,
+                    emissive: 0x004400,
+                    emissiveIntensity: 0.1
+                })
+            );
+            shaft.position.set(x, 10, z);
+            elevatorGroup.add(shaft);
+
+            // Plataforma do elevador
+            const platform = new THREE.Mesh(
+                new THREE.BoxGeometry(3.5, 0.5, 3.5),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x00d4ff,
+                    emissive: 0x00d4ff,
+                    emissiveIntensity: 0.5
+                })
+            );
+            platform.position.set(x, isOnFirstFloor ? 2.25 : 12.25, z);
+            elevatorGroup.add(platform);
+
+            // Botões do elevador
+            const buttonUp = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x00ff00,
+                    emissive: 0x00ff00,
+                    emissiveIntensity: 0.8
+                })
+            );
+            buttonUp.position.set(x + 1.5, 2.5, z);
+            elevatorGroup.add(buttonUp);
+
+            const buttonDown = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.8
+                })
+            );
+            buttonDown.position.set(x - 1.5, 2.5, z);
+            elevatorGroup.add(buttonDown);
+
+            elevatorGroup.platform = platform;
+            elevatorGroup.buttonUp = buttonUp;
+            elevatorGroup.buttonDown = buttonDown;
+            elevatorGroup.isMoving = false;
+            elevatorGroup.targetFloor = isOnFirstFloor ? 1 : 2;
+            elevatorGroup.currentFloor = isOnFirstFloor ? 1 : 2;
+
+            return elevatorGroup;
         }
 
         // Função para criar mão com arma para primeira pessoa
@@ -832,10 +1140,41 @@
             renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0x0a0a2e, 0.3));
-            const light = new THREE.DirectionalLight(0x00ffff, 0.5);
-            light.position.set(50, 100, 50);
-            scene.add(light);
+            // Iluminação sombria e atmosférica do Alien
+            scene.add(new THREE.AmbientLight(0x000a0a, 0.1)); // Muito escuro
+            const mainLight = new THREE.DirectionalLight(0x004400, 0.3); // Verde sombrio
+            mainLight.position.set(50, 100, 50);
+            scene.add(mainLight);
+            
+            // Luz de emergência vermelha
+            const emergencyLight = new THREE.DirectionalLight(0x8b0000, 0.2);
+            emergencyLight.position.set(-50, 80, -50);
+            scene.add(emergencyLight);
+            
+            // Luz ácida verde
+            const acidLight = new THREE.PointLight(0x00ff00, 0.5, 30);
+            acidLight.position.set(0, 5, 0);
+            scene.add(acidLight);
+
+            // Adicionar mais spots de luz para iluminar o ambiente
+            const lightPositions = [
+                [20, 8, 20], [-20, 8, 20], [20, 8, -20], [-20, 8, -20],
+                [0, 8, 30], [0, 8, -30], [30, 8, 0], [-30, 8, 0],
+                [15, 15, 15], [-15, 15, 15], [15, 15, -15], [-15, 15, -15]
+            ];
+
+            lightPositions.forEach((pos, i) => {
+                const spotLight = new THREE.PointLight(0x00d4ff, 0.3, 25);
+                spotLight.position.set(pos[0], pos[1], pos[2]);
+                scene.add(spotLight);
+
+                // Adicionar luz de emergência vermelha em alguns pontos
+                if (i % 3 === 0) {
+                    const emergencySpot = new THREE.PointLight(0x8b0000, 0.2, 20);
+                    emergencySpot.position.set(pos[0], pos[1] + 2, pos[2]);
+                    scene.add(emergencySpot);
+                }
+            });
 
             applyCustomizations(); // Aplicar customizações ao player
 
@@ -1066,27 +1405,569 @@
             keys['KeyD'] = mobileJoystick.deltaX > threshold;
         }
 
-        // Função para atualizar o tema do mundo (sem mudanças)
+        // Função para atualizar o tema do mundo (Alien)
         function updateWorldTheme() {
-            const themes = [
-                { name: 'Noite', fog: 0x000a1f, ambient: 0x0a0a2e, ground: 0x0a0a1f, sidewalk: 0x333333 },
-                { name: 'Manhã', fog: 0x87ceeb, ambient: 0xffffff, ground: 0x3a3a3a, sidewalk: 0x666666 },
-                { name: 'Tarde', fog: 0xffa500, ambient: 0xffcc88, ground: 0x4a4a4a, sidewalk: 0x777777 },
-                { name: 'Pôr do Sol', fog: 0xff6347, ambient: 0xff8866, ground: 0x2a2a2a, sidewalk: 0x555555 }
+            const alienThemes = [
+                { name: 'Corredores Escuros', fog: 0x000000, ambient: 0x000a0a, density: 0.02 },
+                { name: 'Vazamento de Ácido', fog: 0x001100, ambient: 0x001a00, density: 0.015 },
+                { name: 'Emergência', fog: 0x1a0000, ambient: 0x2a0000, density: 0.018 },
+                { name: 'Infestação', fog: 0x0a1a0a, ambient: 0x0a2a0a, density: 0.025 }
             ];
 
-            const theme = themes[worldTheme % themes.length];
-            scene.fog = new THREE.FogExp2(theme.fog, 0.008);
+            const theme = alienThemes[worldTheme % alienThemes.length];
+            scene.fog = new THREE.FogExp2(theme.fog, theme.density);
 
             scene.children.forEach(child => {
                 if (child instanceof THREE.AmbientLight) {
                     child.color.setHex(theme.ambient);
-                    child.intensity = worldTheme === 0 ? 0.3 : 0.6;
+                    child.intensity = 0.05 + Math.random() * 0.05; // Muito escuro
                 }
             });
         }
 
-        // Função para gerar o mundo (sem mudanças)
+        // Função para criar tripulante da espaçonave
+        function createCrewMember(isInteractive = false) {
+            const group = new THREE.Object3D();
+            const colors = [0x0066cc, 0x00cc66, 0xcc6600, 0x6600cc, 0xcc0066];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                emissive: color, 
+                emissiveIntensity: 0.2 
+            });
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.3), bodyMat);
+            body.position.y = 0.5;
+            group.add(body);
+
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xffcc99 }));
+            head.position.y = 1.2;
+            group.add(head);
+
+            // Capacete espacial
+            const helmet = new THREE.Mesh(
+                new THREE.SphereGeometry(0.25, 16, 16),
+                new THREE.MeshStandardMaterial({ 
+                    color: 0xcccccc, 
+                    transparent: true, 
+                    opacity: 0.7,
+                    emissive: 0x00d4ff,
+                    emissiveIntensity: 0.1
+                })
+            );
+            helmet.position.y = 1.2;
+            group.add(helmet);
+
+            if (isInteractive) {
+                const label = createLabel('Portal está a ' + (Math.random() > 0.5 ? 'norte' : 'sul'), '#ffffff', 6);
+                label.position.y = 2;
+                label.visible = false;
+                group.add(label);
+            }
+
+            return group;
+        }
+
+        // Função para criar estrutura principal da espaçonave infectada
+        function createAlienSpaceshipStructure(theme) {
+            // Paredes externas corroídas e infectadas
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: theme.wall,
+                emissive: theme.bioGlow,
+                emissiveIntensity: 0.08,
+                roughness: 0.8
+            });
+
+            // Paredes norte e sul com crescimento orgânico
+            for (let i = 0; i < 2; i++) {
+                const wall = new THREE.Mesh(
+                    new THREE.BoxGeometry(100, 20, 2),
+                    wallMaterial
+                );
+                wall.position.set(0, 10, i === 0 ? -50 : 50);
+                buildings.push(wall);
+                scene.add(wall);
+
+                // Crescimento orgânico nas paredes
+                for (let j = 0; j < 5; j++) {
+                    const growth = new THREE.Mesh(
+                        new THREE.SphereGeometry(1 + Math.random() * 2, 8, 8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: theme.organic,
+                            emissive: theme.bioGlow,
+                            emissiveIntensity: 0.3
+                        })
+                    );
+                    growth.position.set(
+                        Math.random() * 80 - 40,
+                        5 + Math.random() * 10,
+                        i === 0 ? -50.5 : 50.5
+                    );
+                    scene.add(growth);
+                }
+            }
+
+            // Paredes leste e oeste
+            for (let i = 0; i < 2; i++) {
+                const wall = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 20, 100),
+                    wallMaterial
+                );
+                wall.position.set(i === 0 ? -50 : 50, 10, 0);
+                buildings.push(wall);
+                scene.add(wall);
+
+                // Crescimento orgânico
+                for (let j = 0; j < 5; j++) {
+                    const growth = new THREE.Mesh(
+                        new THREE.SphereGeometry(1 + Math.random() * 2, 8, 8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: theme.organic,
+                            emissive: theme.bioGlow,
+                            emissiveIntensity: 0.3
+                        })
+                    );
+                    growth.position.set(
+                        i === 0 ? -50.5 : 50.5,
+                        5 + Math.random() * 10,
+                        Math.random() * 80 - 40
+                    );
+                    scene.add(growth);
+                }
+            }
+
+            // Teto corroído com vazamentos
+            const ceiling = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100),
+                new THREE.MeshStandardMaterial({ 
+                    color: theme.metal,
+                    emissive: theme.bioGlow,
+                    emissiveIntensity: 0.05,
+                    roughness: 0.9
+                })
+            );
+            ceiling.rotation.x = Math.PI / 2;
+            ceiling.position.y = 20;
+            scene.add(ceiling);
+
+            // Segundo andar com crescimento orgânico
+            const secondFloor = new THREE.Mesh(
+                new THREE.PlaneGeometry(80, 80),
+                new THREE.MeshStandardMaterial({ 
+                    color: theme.floor,
+                    emissive: theme.bioGlow,
+                    emissiveIntensity: 0.08
+                })
+            );
+            secondFloor.rotation.x = -Math.PI / 2;
+            secondFloor.position.y = 12;
+            scene.add(secondFloor);
+
+            // Adicionar crescimentos orgânicos no segundo andar
+            for (let i = 0; i < 8; i++) {
+                const organicGrowth = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.5 + Math.random() * 1, 1 + Math.random() * 1.5, 2 + Math.random() * 3, 8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.organic,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.4
+                    })
+                );
+                organicGrowth.position.set(
+                    Math.random() * 60 - 30,
+                    13,
+                    Math.random() * 60 - 30
+                );
+                scene.add(organicGrowth);
+            }
+        }
+
+        // Função para criar cômodos infectados da espaçonave
+        function createAlienSpaceshipRooms(theme) {
+            const roomMaterial = new THREE.MeshStandardMaterial({ 
+                color: theme.metal,
+                emissive: theme.bioGlow,
+                emissiveIntensity: 0.05,
+                roughness: 0.8
+            });
+
+            // Ponte de comando infectada (centro, segundo andar)
+            const bridge = new THREE.Mesh(
+                new THREE.BoxGeometry(20, 8, 15),
+                roomMaterial
+            );
+            bridge.position.set(0, 12, 0);
+            buildings.push(bridge);
+            scene.add(bridge);
+
+            // Engenharia corroída (lado direito, primeiro andar)
+            const engineering = new THREE.Mesh(
+                new THREE.BoxGeometry(15, 8, 20),
+                roomMaterial
+            );
+            engineering.position.set(25, 4, 0);
+            buildings.push(engineering);
+            scene.add(engineering);
+
+            // Dormitórios infectados (lado esquerdo, primeiro andar)
+            const dormitory = new THREE.Mesh(
+                new THREE.BoxGeometry(18, 8, 12),
+                roomMaterial
+            );
+            dormitory.position.set(-25, 4, 0);
+            buildings.push(dormitory);
+            scene.add(dormitory);
+
+            // Laboratório biológico (fundo, segundo andar)
+            const lab = new THREE.Mesh(
+                new THREE.BoxGeometry(16, 8, 18),
+                roomMaterial
+            );
+            lab.position.set(0, 12, 25);
+            buildings.push(lab);
+            scene.add(lab);
+
+            // Armazém com ovos (frente, segundo andar)
+            const storage = new THREE.Mesh(
+                new THREE.BoxGeometry(14, 8, 16),
+                roomMaterial
+            );
+            storage.position.set(0, 12, -25);
+            buildings.push(storage);
+            scene.add(storage);
+
+            // Adicionar ovos de Alien no armazém
+            for (let i = 0; i < 3; i++) {
+                const egg = new THREE.Mesh(
+                    new THREE.SphereGeometry(1, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.organic,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.2
+                    })
+                );
+                egg.scale.set(1.2, 1.5, 1);
+                egg.position.set(
+                    Math.random() * 10 - 5,
+                    12.5,
+                    -25 + Math.random() * 12 - 6
+                );
+                scene.add(egg);
+            }
+
+            // Adicionar tecido orgânico nos cômodos
+            for (let i = 0; i < 10; i++) {
+                const tissue = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5 + Math.random() * 1, 6, 6),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.organic,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.3
+                    })
+                );
+                tissue.position.set(
+                    Math.random() * 80 - 40,
+                    2 + Math.random() * 10,
+                    Math.random() * 80 - 40
+                );
+                scene.add(tissue);
+            }
+        }
+
+        // Função para criar sistema de elevadores funcionais
+        function createFunctionalElevatorSystem(theme) {
+            // Criar 3 elevadores funcionais
+            const elevatorPositions = [
+                [0, 0],    // Centro
+                [30, -20], // Lado direito
+                [-30, 20]  // Lado esquerdo
+            ];
+
+            elevatorPositions.forEach((pos, i) => {
+                const elevator = createFunctionalElevator(pos[0], pos[1], true);
+                elevators.push(elevator);
+                scene.add(elevator);
+                
+                // Adicionar plataforma aos walkways para colisão
+                walkways.push(elevator.platform);
+            });
+        }
+
+        // Função para criar sistema de portas labirínticas
+        function createMazeDoors(theme) {
+            // Criar várias portas pela nave
+            const doorPositions = [
+                [10, 0, 0], [-10, 0, 0],   // Portas norte-sul
+                [0, 0, 10], [0, 0, -10],   // Portas leste-oeste
+                [20, 0, 20], [-20, 0, -20], // Portas diagonais
+                [25, 0, 0], [-25, 0, 0],   // Portas laterais
+                [0, 12, 0], [15, 12, 15], [-15, 12, -15] // Portas segundo andar
+            ];
+
+            doorPositions.forEach((pos, i) => {
+                const door = createDoor(pos[0], pos[1], pos[2]);
+                doors.push(door);
+                scene.add(door);
+                
+                // Adicionar porta aos buildings para colisão se fechada
+                if (!door.isOpen) {
+                    buildings.push(door.door);
+                }
+            });
+        }
+
+        // Função para criar sistema de escadas com crescimento orgânico
+        function createAlienStairSystem(theme) {
+            const stairMaterial = new THREE.MeshStandardMaterial({ 
+                color: theme.metal,
+                emissive: theme.bioGlow,
+                emissiveIntensity: 0.08,
+                roughness: 0.9
+            });
+
+            // Escadas principais corroídas (centro-lado)
+            for (let i = 0; i < 2; i++) {
+                const stairGroup = new THREE.Object3D();
+                for (let j = 0; j < 6; j++) {
+                    const step = new THREE.Mesh(
+                        new THREE.BoxGeometry(2, 0.5, 1.5),
+                        stairMaterial
+                    );
+                    step.position.set(i === 0 ? -15 : 15, j * 0.5, -10 + j * 0.3);
+                    stairGroup.add(step);
+
+                    // Adicionar crescimento orgânico nos degraus
+                    if (Math.random() > 0.7) {
+                        const growth = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.3, 6, 6),
+                            new THREE.MeshStandardMaterial({ 
+                                color: theme.organic,
+                                emissive: theme.bioGlow,
+                                emissiveIntensity: 0.4
+                            })
+                        );
+                        growth.position.set(
+                            i === 0 ? -15 : 15, 
+                            j * 0.5 + 0.3, 
+                            -10 + j * 0.3
+                        );
+                        stairGroup.add(growth);
+                    }
+                }
+                stairGroup.position.y = 0;
+                scene.add(stairGroup);
+                
+                // Adicionar cada degrau aos walkways para colisão
+                stairGroup.children.forEach(child => {
+                    if (child.geometry.type === 'BoxGeometry') {
+                        walkways.push(child);
+                    }
+                });
+            }
+
+            // Escadas laterais infectadas (conectando aos elevadores)
+            for (let i = 0; i < 2; i++) {
+                const sideStairGroup = new THREE.Object3D();
+                for (let j = 0; j < 5; j++) {
+                    const step = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.5, 0.5, 2),
+                        stairMaterial
+                    );
+                    step.position.set(20 + j * 0.3, j * 0.5, i === 0 ? 15 : -15);
+                    sideStairGroup.add(step);
+                }
+                sideStairGroup.position.y = 0;
+                scene.add(sideStairGroup);
+                
+                sideStairGroup.children.forEach(step => {
+                    walkways.push(step);
+                });
+            }
+        }
+
+        // Função para criar corredores infectados
+        function createAlienCorridors(theme) {
+            const corridorMaterial = new THREE.MeshStandardMaterial({ 
+                color: theme.wall,
+                emissive: theme.bioGlow,
+                emissiveIntensity: 0.03,
+                roughness: 0.8
+            });
+
+            // Corredor horizontal principal infectado (segundo andar)
+            const mainCorridor = new THREE.Mesh(
+                new THREE.BoxGeometry(60, 8, 4),
+                corridorMaterial
+            );
+            mainCorridor.position.set(0, 12, 0);
+            buildings.push(mainCorridor);
+            scene.add(mainCorridor);
+
+            // Corredor vertical principal infectado (segundo andar)
+            const verticalCorridor = new THREE.Mesh(
+                new THREE.BoxGeometry(4, 8, 50),
+                corridorMaterial
+            );
+            verticalCorridor.position.set(0, 12, 0);
+            buildings.push(verticalCorridor);
+            scene.add(verticalCorridor);
+
+            // Corredores de conexão infectados (primeiro andar)
+            const floor1Corridor1 = new THREE.Mesh(
+                new THREE.BoxGeometry(20, 8, 4),
+                corridorMaterial
+            );
+            floor1Corridor1.position.set(0, 4, 0);
+            buildings.push(floor1Corridor1);
+            scene.add(floor1Corridor1);
+
+            const floor1Corridor2 = new THREE.Mesh(
+                new THREE.BoxGeometry(4, 8, 30),
+                corridorMaterial
+            );
+            floor1Corridor2.position.set(0, 4, 0);
+            buildings.push(floor1Corridor2);
+            scene.add(floor1Corridor2);
+
+            // Adicionar vazamentos de ácido nos corredores
+            for (let i = 0; i < 6; i++) {
+                const acidPool = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.5 + Math.random() * 1, 1 + Math.random() * 1.5, 0.1, 8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.acid,
+                        emissive: theme.acid,
+                        emissiveIntensity: 0.6,
+                        transparent: true,
+                        opacity: 0.8
+                    })
+                );
+                acidPool.position.set(
+                    Math.random() * 40 - 20,
+                    0.05,
+                    Math.random() * 40 - 20
+                );
+                scene.add(acidPool);
+            }
+        }
+
+        // Função para criar decorações sombrias da espaçonave infectada
+        function createAlienDecorations(theme) {
+            // Painéis de controle corroídos
+            for (let i = 0; i < 8; i++) {
+                const panel = new THREE.Mesh(
+                    new THREE.BoxGeometry(2, 3, 0.2),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.metal,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.1,
+                        roughness: 0.9
+                    })
+                );
+                const positions = [
+                    [0, 1.5, 15], [-15, 1.5, 0], [15, 1.5, 0], [0, 1.5, -15],
+                    [0, 13.5, 15], [-15, 13.5, 0], [15, 13.5, 0], [0, 13.5, -15]
+                ];
+                panel.position.set(positions[i][0], positions[i][1], positions[i][2]);
+                scene.add(panel);
+
+                // Adicionar crescimento orgânico nos painéis
+                if (Math.random() > 0.6) {
+                    const growth = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.3 + Math.random() * 0.5, 6, 6),
+                        new THREE.MeshStandardMaterial({ 
+                            color: theme.organic,
+                            emissive: theme.bioGlow,
+                            emissiveIntensity: 0.5
+                        })
+                    );
+                    growth.position.set(
+                        positions[i][0],
+                        positions[i][1] + 0.5,
+                        positions[i][2]
+                    );
+                    scene.add(growth);
+                }
+            }
+
+            // Luzes de emergência piscando (menos luzes, mais atmosfera)
+            for (let i = 0; i < 8; i++) {
+                const light = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.4, 16, 16),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.emergency,
+                        emissive: theme.emergency,
+                        emissiveIntensity: 0.7
+                    })
+                );
+                const angle = (i / 8) * Math.PI * 2;
+                const radius = 35;
+                light.position.set(
+                    Math.cos(angle) * radius,
+                    18,
+                    Math.sin(angle) * radius
+                );
+                scene.add(light);
+            }
+
+            // Consoles de computador quebrados
+            for (let i = 0; i < 6; i++) {
+                const console = new THREE.Mesh(
+                    new THREE.BoxGeometry(3, 1.5, 1.5),
+                    new THREE.MeshStandardMaterial({ 
+                        color: 0x1a1a1a,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.15,
+                        roughness: 0.9
+                    })
+                );
+                const positions = [
+                    [20, 0.75, 10], [-20, 0.75, 10], [20, 0.75, -10],
+                    [-20, 0.75, -10], [0, 12.75, 20], [0, 12.75, -20]
+                ];
+                console.position.set(positions[i][0], positions[i][1], positions[i][2]);
+                scene.add(console);
+            }
+
+            // Adicionar mais elementos orgânicos espalhados
+            for (let i = 0; i < 15; i++) {
+                const organicElement = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.3 + Math.random() * 0.7, 6, 6),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.organic,
+                        emissive: theme.bioGlow,
+                        emissiveIntensity: 0.3 + Math.random() * 0.4
+                    })
+                );
+                organicElement.position.set(
+                    Math.random() * 80 - 40,
+                    1 + Math.random() * 15,
+                    Math.random() * 80 - 40
+                );
+                scene.add(organicElement);
+            }
+
+            // Adicionar mais vazamentos de ácido
+            for (let i = 0; i < 10; i++) {
+                const acidLeak = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.2, 0.8, 0.05, 8),
+                    new THREE.MeshStandardMaterial({ 
+                        color: theme.acid,
+                        emissive: theme.acid,
+                        emissiveIntensity: 0.8,
+                        transparent: true,
+                        opacity: 0.9
+                    })
+                );
+                acidLeak.position.set(
+                    Math.random() * 60 - 30,
+                    0.025,
+                    Math.random() * 60 - 30
+                );
+                scene.add(acidLeak);
+            }
+        }
+
+        // Função para gerar o mundo da espaçonave
         function generateWorld() {
             buildings.forEach(b => scene.remove(b));
             enemies.forEach(e => scene.remove(e.mesh));
@@ -1115,253 +1996,277 @@
             worldTheme++;
             updateWorldTheme();
 
-            const themes = [
-                { ground: 0x0a0a1f, sidewalk: 0x333333 },
-                { ground: 0x3a3a3a, sidewalk: 0x666666 },
-                { ground: 0x4a4a4a, sidewalk: 0x777777 },
-                { ground: 0x2a2a2a, sidewalk: 0x555555 }
-            ];
-            const currentTheme = themes[worldTheme % themes.length];
+            // Tema Alien - escuro e orgânico
+            const alienTheme = {
+                floor: 0x0a0a0a,
+                wall: 0x1a1a1a,
+                metal: 0x2a2a2a,
+                organic: 0x4a2a1a,
+                blood: 0x8b0000,
+                acid: 0x00ff00,
+                emergency: 0xff0000,
+                bioGlow: 0x004400
+            };
 
-            // Chão base
-            const ground = new THREE.Mesh(
-                new THREE.PlaneGeometry(500, 500),
-                new THREE.MeshStandardMaterial({ color: currentTheme.ground })
+            // Chão base da espaçonave infectada
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(200, 200),
+                new THREE.MeshStandardMaterial({ 
+                    color: alienTheme.floor,
+                    emissive: alienTheme.bioGlow,
+                    emissiveIntensity: 0.05
+                })
             );
-            ground.rotation.x = -Math.PI / 2;
-            scene.add(ground);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
 
-            // Pistas para carros
-            for (let i = -2; i <= 2; i++) {
-                const road = new THREE.Mesh(
-                    new THREE.PlaneGeometry(500, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x1c2526 })
-                );
-                road.rotation.x = -Math.PI / 2;
-                road.position.set(0, 0.01, i * 20);
-                roads.push(road);
-                scene.add(road);
-            }
+            // Criar estrutura principal da espaçonave infectada
+            createAlienSpaceshipStructure(alienTheme);
 
-            // Calçadas
-            for (let i = -2; i <= 2; i++) {
-                const sidewalk1 = new THREE.Mesh(
-                    new THREE.BoxGeometry(500, 0.2, 5),
-                    new THREE.MeshStandardMaterial({ color: currentTheme.sidewalk })
-                );
-                sidewalk1.position.set(0, 0.1, i * 20 + 7.5);
-                sidewalks.push(sidewalk1);
-                scene.add(sidewalk1);
+            // Criar cômodos infectados
+            createAlienSpaceshipRooms(alienTheme);
 
-                const sidewalk2 = new THREE.Mesh(
-                    new THREE.BoxGeometry(500, 0.2, 5),
-                    new THREE.MeshStandardMaterial({ color: currentTheme.sidewalk })
-                );
-                sidewalk2.position.set(0, 0.1, i * 20 - 7.5);
-                sidewalks.push(sidewalk2);
-                scene.add(sidewalk2);
-            }
+            // Criar sistema de elevadores funcionais
+            createFunctionalElevatorSystem(alienTheme);
 
-            // Passarelas com rampas
-            for (let i = -1; i <= 1; i++) {
-                const walkway = new THREE.Mesh(
-                    new THREE.BoxGeometry(10, 0.3, 20),
-                    new THREE.MeshStandardMaterial({ color: 0x555555 })
-                );
-                walkway.position.set(i * 20, 3, 0);
-                walkways.push(walkway);
-                scene.add(walkway);
+            // Criar escadas com crescimento orgânico
+            createAlienStairSystem(alienTheme);
 
-                // Suportes da passarela
-                const support1 = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.5, 3, 0.5),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
-                );
-                support1.position.set(i * 20 - 5, 1.5, -10);
-                scene.add(support1);
+            // Criar corredores infectados
+            createAlienCorridors(alienTheme);
 
-                const support2 = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.5, 3, 0.5),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
-                );
-                support2.position.set(i * 20 + 5, 1.5, -10);
-                scene.add(support2);
+            // Criar sistema de portas labirínticas
+            createMazeDoors(alienTheme);
 
-                const support3 = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.5, 3, 0.5),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
-                );
-                support3.position.set(i * 20 - 5, 1.5, 10);
-                scene.add(support3);
+            // Adicionar elementos orgânicos e biológicos
+            createAlienDecorations(alienTheme);
 
-                const support4 = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.5, 3, 0.5),
-                    new THREE.MeshStandardMaterial({ color: 0x333333 })
-                );
-                support4.position.set(i * 20 + 5, 1.5, 10);
-                scene.add(support4);
-
-                // Rampas
-                const ramp1 = new THREE.Mesh(
-                    new THREE.BoxGeometry(10, 0.3, 5),
-                    new THREE.MeshStandardMaterial({ color: 0x555555 })
-                );
-                ramp1.position.set(i * 20, 1.5, 12.5);
-                ramp1.rotation.x = Math.PI / 6;
-                ramps.push(ramp1);
-                scene.add(ramp1);
-
-                const ramp2 = new THREE.Mesh(
-                    new THREE.BoxGeometry(10, 0.3, 5),
-                    new THREE.MeshStandardMaterial({ color: 0x555555 })
-                );
-                ramp2.position.set(i * 20, 1.5, -12.5);
-                ramp2.rotation.x = -Math.PI / 6;
-                ramps.push(ramp2);
-                scene.add(ramp2);
-            }
-
-            // Trem
-            train = createTrain();
-            train.mesh.position.set(-50, 0, 50);
-            scene.add(train.mesh);
-
-            for (let i = 0; i < 30; i++) {
-                const h = Math.random() * 30 + 10;
-                const w = Math.random() * 8 + 5;
-                const d = Math.random() * 8 + 5;
-                const building = new THREE.Mesh(
-                    new THREE.BoxGeometry(w, h, d),
-                    new THREE.MeshStandardMaterial({
-                        color: Math.random() > 0.5 ? 0x1a1a3e : 0x2e1a3e,
-                        emissive: Math.random() > 0.7 ? 0x00ffff : 0xff00ff,
-                        emissiveIntensity: 0.2
+            // Criar drones/robôs da espaçonave (substituindo carros)
+            for (let i = 0; i < 8; i++) {
+                const droneGroup = new THREE.Object3D();
+                const drone = new THREE.Mesh(
+                    new THREE.BoxGeometry(4, 2, 4),
+                    new THREE.MeshStandardMaterial({ 
+                        color: alienTheme.metal,
+                        emissive: alienTheme.bioGlow,
+                        emissiveIntensity: 0.3
                     })
                 );
-                const a = Math.random() * Math.PI * 2;
-                const dist = Math.random() * 80 + 30;
-                building.position.set(Math.cos(a) * dist, h / 2, Math.sin(a) * dist);
-                buildings.push(building);
-                scene.add(building);
-            }
+                drone.position.y = 1;
+                droneGroup.add(drone);
 
-            for (let i = 0; i < 10; i++) {
-                const carGroup = new THREE.Object3D();
-                const car = new THREE.Mesh(
-                    new THREE.BoxGeometry(6, 3, 3),
-                    new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, emissive: 0x00ffff, emissiveIntensity: 0.5 })
+                // Propulsores do drone
+                const thrusterMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xff6600,
+                    emissive: 0xff6600,
+                    emissiveIntensity: 0.8
+                });
+
+                const thruster1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.5, 8), thrusterMat);
+                thruster1.position.set(-1.5, 0.5, -1.5);
+                droneGroup.add(thruster1);
+
+                const thruster2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.5, 8), thrusterMat);
+                thruster2.position.set(1.5, 0.5, -1.5);
+                droneGroup.add(thruster2);
+
+                const thruster3 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.5, 8), thrusterMat);
+                thruster3.position.set(-1.5, 0.5, 1.5);
+                droneGroup.add(thruster3);
+
+                const thruster4 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.5, 8), thrusterMat);
+                thruster4.position.set(1.5, 0.5, 1.5);
+                droneGroup.add(thruster4);
+
+                droneGroup.position.set(
+                    Math.random() * 80 - 40, 
+                    Math.random() * 10 + 5, // Voar em diferentes alturas
+                    Math.random() * 80 - 40
                 );
-                car.position.y = 0.75;
-                carGroup.add(car);
-
-                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
-                const wheelGeom = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 16);
-
-                const wheel1 = new THREE.Mesh(wheelGeom, wheelMat);
-                wheel1.rotation.z = Math.PI / 2;
-                wheel1.position.set(-2.2, -0.15, 1.8);
-                carGroup.add(wheel1);
-
-                const wheel2 = new THREE.Mesh(wheelGeom, wheelMat);
-                wheel2.rotation.z = Math.PI / 2;
-                wheel2.position.set(-2.2, -0.15, -1.8);
-                carGroup.add(wheel2);
-
-                const wheel3 = new THREE.Mesh(wheelGeom, wheelMat);
-                wheel3.rotation.z = Math.PI / 2;
-                wheel3.position.set(2.2, -0.15, 1.8);
-                carGroup.add(wheel3);
-
-                const wheel4 = new THREE.Mesh(wheelGeom, wheelMat);
-                wheel4.rotation.z = Math.PI / 2;
-                wheel4.position.set(2.2, -0.15, -1.8);
-                carGroup.add(wheel4);
-
-                carGroup.position.set(Math.random() * 100 - 50, 0, (Math.floor(Math.random() * 5) - 2) * 20);
                 vehicles.push({
-                    mesh: carGroup,
-                    wheels: [wheel1, wheel2, wheel3, wheel4],
-                    speed: (Math.random() * 0.25 + 0.15) * (Math.random() > 0.5 ? 1 : -1),
+                    mesh: droneGroup,
+                    wheels: [thruster1, thruster2, thruster3, thruster4],
+                    speed: (Math.random() * 0.15 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
                     axis: 'x'
                 });
-                scene.add(carGroup);
+                scene.add(droneGroup);
             }
 
-            for (let i = 0; i < 3 + level * 2; i++) {
-                const dino = createDino();
+            // Criar Xenomorphs (Alien)
+            for (let i = 0; i < 2 + level; i++) {
+                const xenomorph = createXenomorph();
                 const a = Math.random() * Math.PI * 2;
                 const dist = Math.random() * 40 + 20;
-                dino.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+                xenomorph.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
                 enemies.push({
-                    mesh: dino,
-                    speed: 0.05 + level * 0.01,
-                    health: 5,
+                    mesh: xenomorph,
+                    speed: 0.06 + level * 0.015,
+                    health: 8,
                     biteAnimation: 0,
                     isDead: false
                 });
-                scene.add(dino);
+                scene.add(xenomorph);
             }
 
-            for (let i = 0; i < 15; i++) {
+            // Criar Facehuggers (menores, mais numerosos)
+            for (let i = 0; i < 4 + level * 2; i++) {
+                const facehugger = createFacehugger();
+                const a = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 30 + 15;
+                facehugger.position.set(Math.cos(a) * dist, 0.15, Math.sin(a) * dist);
+                enemies.push({
+                    mesh: facehugger,
+                    speed: 0.08 + level * 0.01,
+                    health: 3,
+                    biteAnimation: 0,
+                    isDead: false
+                });
+                scene.add(facehugger);
+            }
+
+            // Criar Boss (Alien Queen) - apenas um por nível
+            if (level % 3 === 0) {
+                const alienBoss = createAlienBoss();
+                alienBoss.position.set(0, 0, 0); // Centro da nave
+                boss = {
+                    mesh: alienBoss,
+                    speed: 0.12, // Mais rápido que Xenomorphs normais
+                    health: 20,
+                    biteAnimation: 0,
+                    isDead: false,
+                    isBoss: true
+                };
+                enemies.push(boss);
+                scene.add(alienBoss);
+            }
+
+            // Criar tripulantes da espaçonave (substituindo pedestres)
+            for (let i = 0; i < 12; i++) {
                 const isInteractive = Math.random() > 0.7;
-                const ped = createPedestrian(isInteractive);
-                const sidewalkIndex = Math.floor(Math.random() * 5);
-                ped.position.set(
-                    Math.random() * 80 - 40,
-                    0.2,
-                    (sidewalkIndex - 2) * 20 + (sidewalkIndex % 2 === 0 ? 7.5 : -7.5)
+                const crewMember = createCrewMember(isInteractive);
+                crewMember.position.set(
+                    Math.random() * 60 - 30,
+                    2, // Andar principal
+                    Math.random() * 60 - 30
                 );
                 const walkDir = Math.random() * Math.PI * 2;
                 pedestrians.push({
-                    mesh: ped,
+                    mesh: crewMember,
                     direction: walkDir,
                     speed: 0.03 + Math.random() * 0.02,
                     walkCycle: Math.random() * 10,
                     isInteractive
                 });
-                scene.add(ped);
+                scene.add(crewMember);
             }
 
-            // Aumentar número de pickups de comida para 8 (mais caixas de comida)
-            for (let i = 0; i < 8; i++) {
+            // Criar itens da espaçonave
+            for (let i = 0; i < 15; i++) {
                 const type = Math.random();
                 let pickup;
                 let label;
-                if (type > 0.7) {
+                if (type > 0.85) {
+                    // Granadas
                     pickup = new THREE.Mesh(
-                        new THREE.BoxGeometry(1, 1, 1),
-                        new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 0.9 })
+                        new THREE.SphereGeometry(0.4, 8, 8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0xff6600, 
+                            emissive: 0xff6600, 
+                            emissiveIntensity: 0.9 
+                        })
                     );
-                    label = createLabel('ARMA', '#ffff00');
-                    pickup.type = 'weapon';
-                } else if (type > 0.3) {
+                    label = createLabel('GRANADAS', '#ff6600');
+                    pickup.type = 'grenades';
+                } else if (type > 0.75) {
+                    // Minas
+                    pickup = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.5, 0.5, 0.3, 8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0xffff00, 
+                            emissive: 0xffff00, 
+                            emissiveIntensity: 0.9 
+                        })
+                    );
+                    label = createLabel('MINAS', '#ffff00');
+                    pickup.type = 'mines';
+                } else if (type > 0.65) {
+                    // Lança-chamas
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.5, 0.3, 0.8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0xff0000, 
+                            emissive: 0xff0000, 
+                            emissiveIntensity: 0.9 
+                        })
+                    );
+                    label = createLabel('LANÇA-CHAMAS', '#ff0000');
+                    pickup.type = 'flamethrower';
+                } else if (type > 0.55) {
+                    // Bazuca de energia
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(2, 0.4, 0.6),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0x00ffff, 
+                            emissive: 0x00ffff, 
+                            emissiveIntensity: 0.9 
+                        })
+                    );
+                    label = createLabel('BAZUCA PLASMA', '#00ffff');
+                    pickup.type = 'plasma_launcher';
+                } else if (type > 0.45) {
+                    // Kit médico
                     pickup = createRedCross();
-                    label = createLabel('MEDICAMENTO', '#ff0000');
+                    label = createLabel('MED KIT', '#ff0000');
                     pickup.type = 'health';
-                } else {
+                } else if (type > 0.25) {
+                    // Ração espacial
                     pickup = new THREE.Mesh(
-                        new THREE.BoxGeometry(1, 1, 1),
-                        new THREE.MeshStandardMaterial({ color: 0xffa500, emissive: 0xffa500, emissiveIntensity: 0.9 })
+                        new THREE.BoxGeometry(0.8, 0.8, 0.8),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0xffa500, 
+                            emissive: 0xffa500, 
+                            emissiveIntensity: 0.9 
+                        })
                     );
-                    label = createLabel('COMIDA', '#ffa500');
+                    label = createLabel('RATIONS', '#ffa500');
                     pickup.type = 'food';
+                } else {
+                    // Bateria de energia
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(1, 1.5, 0.5),
+                        new THREE.MeshStandardMaterial({ 
+                            color: 0x00d4ff, 
+                            emissive: 0x00d4ff, 
+                            emissiveIntensity: 0.8 
+                        })
+                    );
+                    label = createLabel('ENERGY CELL', '#00d4ff');
+                    pickup.type = 'energy';
                 }
-                pickup.position.set(Math.random() * 60 - 30, 0.5, Math.random() * 60 - 30);
+                pickup.position.set(Math.random() * 60 - 30, 1, Math.random() * 60 - 30);
                 label.position.y = 2.5;
                 pickup.add(label);
                 pickups.push({ mesh: pickup, type: pickup.type, rotation: 0 });
                 scene.add(pickup);
             }
 
+            // Portal de evacuação da espaçonave
             safeZone = new THREE.Mesh(
                 new THREE.BoxGeometry(8, 8, 8),
-                new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.5, transparent: true, opacity: 0.6 })
+                new THREE.MeshStandardMaterial({ 
+                    color: 0x00ff00, 
+                    emissive: 0x00ff00, 
+                    emissiveIntensity: 0.5, 
+                    transparent: true, 
+                    opacity: 0.6 
+                })
             );
             const sa = Math.random() * Math.PI * 2;
             const sd = Math.random() * 50 + 40;
             safeZone.position.set(Math.cos(sa) * sd, 4, Math.sin(sa) * sd);
             scene.add(safeZone);
 
+            // Portal de evacuação espacial
             portal = new THREE.Object3D();
             const portalRings = 5;
             for (let i = 0; i < portalRings; i++) {
@@ -1391,7 +2296,7 @@
             );
             portal.add(core);
 
-            const exitLabel = createLabel('SAIDA', '#00ffff', 8);
+            const exitLabel = createLabel('ESCAPE POD', '#00ffff', 8);
             exitLabel.position.y = 5;
             portal.add(exitLabel);
 
@@ -1614,12 +2519,16 @@
                 if (d < 3) {
                     if (p.type === 'weapon') {
                         hasWeapon = true;
-                        document.getElementById('weapon').textContent = 'Bazuca Verde';
+                        document.getElementById('weapon').textContent = 'Laser Gun';
                         score += 50;
                     } else if (p.type === 'health') {
                         health = Math.min(100, health + 30);
                     } else if (p.type === 'food') {
                         stamina = Math.min(100, stamina + 70); // Aumentada recuperação de comida para 70
+                    } else if (p.type === 'energy') {
+                        stamina = Math.min(100, stamina + 50); // Bateria de energia
+                        health = Math.min(100, health + 10); // Pequena recuperação de vida
+                        score += 25;
                     }
                     scene.remove(p.mesh);
                     pickups.splice(i, 1);
@@ -1631,8 +2540,8 @@
                 score += 100;
                 isInTrain = false;
                 generateWorld();
-                // Reposicionar jogador em local seguro após gerar novo mundo
-                player.position.set(15, 2, 27.5);
+                // Reposicionar jogador na espaçonave após gerar novo mundo
+                player.position.set(0, 2, 0);
             }
 
             const lim = 100;
