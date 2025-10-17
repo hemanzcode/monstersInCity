@@ -443,6 +443,13 @@
         let playerKills = 0;
         let partnerKills = 0;
         let partnerHostile = false;
+        let partnerVelocity = new THREE.Vector3();
+        // Spawner controlado
+        let enemySpawnPoints = [];
+        let enemySpawnPoints2F = [];
+        let spawnTimer = 0;
+        let nextSpawnDelay = 8; // segundos
+        let maxConcurrentEnemies = 12;
 
         // Sistema de armas e inventário
         let currentWeapon = 0; // 0 = Laser Gun (infinita), 1 = Granada, 2 = Mina, 3 = Lança-chamas, 4 = Bazuca de energia
@@ -584,14 +591,35 @@
                     break;
                 }
                 case 'flame': {
-                    const flame = new THREE.Mesh(
-                        new THREE.ConeGeometry(0.6, 1.2, 12),
-                        new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xff4757, emissiveIntensity: 1, transparent: true, opacity: 0.7 })
-                    );
-                    flame.position.copy(origin);
-                    if (isFPS) flame.rotation.set(fpsCamera.pitch, fpsCamera.yaw, 0); else flame.rotation.set(0, player.rotation.y, 0);
-                    projectiles.push({ mesh: flame, velocity: new THREE.Vector3(), type: 'flame', life: 18 });
-                    scene.add(flame);
+                    // Emissor de partículas laranja (mesma estética da explosão, menor)
+                    const group = new THREE.Object3D();
+                    const particles = 12;
+                    const velocities = [];
+                    for (let i = 0; i < particles; i++) {
+                        const size = 0.15 + Math.random() * 0.2;
+                        const sphere = new THREE.Mesh(
+                            new THREE.SphereGeometry(size, 8, 8),
+                            new THREE.MeshStandardMaterial({
+                                color: 0xff8c42,
+                                emissive: 0xff8c42,
+                                emissiveIntensity: 1,
+                                transparent: true,
+                                opacity: 0.9
+                            })
+                        );
+                        sphere.position.set(0, 0, 0);
+                        group.add(sphere);
+                        const spread = 0.15;
+                        const v = new THREE.Vector3(
+                            dir.x + (Math.random() - 0.5) * spread,
+                            dir.y + (Math.random() - 0.5) * spread * 0.5,
+                            dir.z + (Math.random() - 0.5) * spread
+                        ).normalize().multiplyScalar(0.6 + Math.random() * 0.4);
+                        velocities.push(v);
+                    }
+                    group.position.copy(origin);
+                    projectiles.push({ mesh: group, velocities, type: 'flame', life: 20 });
+                    scene.add(group);
                     ammo.flame = Math.max(0, ammo.flame - 1);
                     updateAmmoUI();
                     break;
@@ -1147,6 +1175,15 @@
             platform.rotation.x = -Math.PI / 2;
             elevatorGroup.add(platform);
 
+            // Colisor invisível da plataforma (para colisões e detecção)
+            const platformCollider = new THREE.Mesh(
+                new THREE.BoxGeometry(3.5, 0.5, 3.5),
+                new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.0 })
+            );
+            platformCollider.position.set(x, platform.position.y, z);
+            platformCollider.userData.elevatorCollider = true;
+            elevatorGroup.add(platformCollider);
+
             // LEDs vermelhos e amarelos na plataforma
             const ledPositions = [
                 [-1.4, -1.4], [1.4, -1.4], [1.4, 1.4], [-1.4, 1.4]
@@ -1186,6 +1223,7 @@
             elevatorGroup.add(buttonDown);
 
             elevatorGroup.platform = platform;
+            elevatorGroup.platformCollider = platformCollider;
             elevatorGroup.buttonUp = buttonUp;
             elevatorGroup.buttonDown = buttonDown;
             elevatorGroup.isMoving = false;
@@ -1353,24 +1391,28 @@
         function createWasp() {
             const group = new THREE.Object3D();
             const body = new THREE.Mesh(
-                new THREE.SphereGeometry(0.6, 10, 10),
-                new THREE.MeshStandardMaterial({ color: 0xffd93d, emissive: 0xffd93d, emissiveIntensity: 0.4 })
+                new THREE.SphereGeometry(0.7, 12, 12),
+                new THREE.MeshStandardMaterial({ color: 0xffc107, emissive: 0xffc107, emissiveIntensity: 1.0 })
             );
             group.add(body);
             const head = new THREE.Mesh(
-                new THREE.SphereGeometry(0.3, 10, 10),
-                new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0x00ff88, emissiveIntensity: 0.6 })
+                new THREE.SphereGeometry(0.35, 12, 12),
+                new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0xff8c42, emissiveIntensity: 0.8 })
             );
             head.position.set(0, 0.1, 0.8);
             group.add(head);
             // Asas
-            const wingMat = new THREE.MeshStandardMaterial({ color: 0xddddff, transparent: true, opacity: 0.6, emissive: 0x4444ff, emissiveIntensity: 0.4 });
-            const wingL = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 1.2), wingMat);
-            const wingR = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 1.2), wingMat);
+            const wingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, emissive: 0x88aaff, emissiveIntensity: 0.6 });
+            const wingL = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 1.3), wingMat);
+            const wingR = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 1.3), wingMat);
             wingL.rotation.y = Math.PI/2; wingR.rotation.y = Math.PI/2;
             wingL.position.set(-0.6, 0.2, 0.2); wingR.position.set(0.6, 0.2, 0.2);
             group.add(wingL); group.add(wingR);
             group.userData.wings = [wingL, wingR];
+            // Luz para destacar a vespa
+            const glow = new THREE.PointLight(0xffa500, 0.7, 6);
+            glow.position.set(0, 0.2, 0);
+            group.add(glow);
             return group;
         }
 
@@ -2387,6 +2429,46 @@
             // Criar escadas com crescimento orgânico
             createAlienStairSystem(alienTheme);
 
+            // Segundo andar: piso com buracos e passagens
+            // Criar ladrilhos de piso no y=12 e deixar buracos para acesso ao andar de baixo
+            const floorY = 12;
+            const tileSize = 18;
+            const gridRange = [-2, -1, 0, 1, 2]; // 5x5
+            const holes = new Set(['0,0', '1,-1', '-1,1']); // buracos em posições escolhidas
+            const secondFloorMaterial = new THREE.MeshStandardMaterial({
+                color: alienTheme.floor,
+                emissive: alienTheme.bioGlow,
+                emissiveIntensity: 0.06,
+                roughness: 0.9
+            });
+            gridRange.forEach(ix => {
+                gridRange.forEach(iz => {
+                    const key = `${ix},${iz}`;
+                    if (holes.has(key)) return; // deixar buraco
+                    const tile = new THREE.Mesh(
+                        new THREE.BoxGeometry(tileSize, 0.6, tileSize),
+                        secondFloorMaterial
+                    );
+                    tile.position.set(ix * tileSize, floorY, iz * tileSize);
+                    scene.add(tile);
+                    // Adicionar como passarela para colisão
+                    walkways.push(tile);
+                });
+            });
+
+            // Escada alta até o teto (acesso entre andares e além)
+            const highStair = new THREE.Object3D();
+            for (let i = 0; i < 24; i++) {
+                const step = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.8, 0.5, 2),
+                    new THREE.MeshStandardMaterial({ color: alienTheme.metal, emissive: alienTheme.bioGlow, emissiveIntensity: 0.06 })
+                );
+                step.position.set(28 + i * 0.25, 2 + i * 0.45, -18);
+                highStair.add(step);
+                walkways.push(step);
+            }
+            scene.add(highStair);
+
             // Criar corredores infectados
             createAlienCorridors(alienTheme);
 
@@ -2396,8 +2478,19 @@
             // Adicionar elementos orgânicos e biológicos
             createAlienDecorations(alienTheme);
 
+            // Definir pontos de spawn controlado (térreo e segundo andar)
+            enemySpawnPoints = [
+                new THREE.Vector3(-30, 2, -30), new THREE.Vector3(30, 2, -30),
+                new THREE.Vector3(-30, 2, 30), new THREE.Vector3(30, 2, 30),
+                new THREE.Vector3(0, 2, 40), new THREE.Vector3(40, 2, 0)
+            ];
+            enemySpawnPoints2F = [
+                new THREE.Vector3(-18, 12, -18), new THREE.Vector3(18, 12, -18),
+                new THREE.Vector3(-18, 12, 18), new THREE.Vector3(18, 12, 18)
+            ];
+
             // Criar drones/robôs da espaçonave (substituindo carros)
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 6; i++) {
                 const droneGroup = new THREE.Object3D();
                 const drone = new THREE.Mesh(
                     new THREE.BoxGeometry(4, 2, 4),
@@ -2434,9 +2527,9 @@
                 droneGroup.add(thruster4);
 
                 droneGroup.position.set(
-                    Math.random() * 80 - 40, 
-                    Math.random() * 10 + 5, // Voar em diferentes alturas
-                    Math.random() * 80 - 40
+                    (Math.random() * 2 - 1) * 40, 
+                    Math.random() * 10 + 5,
+                    (Math.random() * 2 - 1) * 40
                 );
                 vehicles.push({
                     mesh: droneGroup,
@@ -2447,7 +2540,7 @@
                 scene.add(droneGroup);
             }
 
-            // Criar Xenomorphs (Alien)
+            // Criar Xenomorphs (Alien) - piso térreo
             for (let i = 0; i < 4 + level * 2; i++) {
                 const xenomorph = createXenomorph();
                 const a = Math.random() * Math.PI * 2;
@@ -2463,7 +2556,17 @@
                 scene.add(xenomorph);
             }
 
-            // Criar Facehuggers (menores, mais numerosos)
+            // Criar Xenomorphs no segundo andar
+            for (let i = 0; i < 2 + level; i++) {
+                const x = (Math.random() * 4 - 2) * 18; // alinhado aos ladrilhos
+                const z = (Math.random() * 4 - 2) * 18;
+                const xenomorph = createXenomorph();
+                xenomorph.position.set(x, 12, z);
+                enemies.push({ mesh: xenomorph, speed: 0.06 + level * 0.015, health: 8, biteAnimation: 0, isDead: false });
+                scene.add(xenomorph);
+            }
+
+            // Criar Facehuggers (menores, mais numerosos) - térreo
             for (let i = 0; i < 8 + level * 3; i++) {
                 const facehugger = createFacehugger();
                 const a = Math.random() * Math.PI * 2;
@@ -2479,12 +2582,20 @@
                 scene.add(facehugger);
             }
 
+            // Facehuggers no segundo andar
+            for (let i = 0; i < 4 + level; i++) {
+                const fh = createFacehugger();
+                fh.position.set((Math.random()*4-2)*18, 12.2, (Math.random()*4-2)*18);
+                enemies.push({ mesh: fh, speed: 0.08 + level * 0.01, health: 3, biteAnimation: 0, isDead: false });
+                scene.add(fh);
+            }
+
             // Criar Vespas (voadoras e rápidas)
             for (let i = 0; i < 3 + level; i++) {
                 const wasp = createWasp();
                 const a = Math.random() * Math.PI * 2;
                 const dist = Math.random() * 40 + 20;
-                wasp.position.set(Math.cos(a) * dist, 4 + Math.random() * 6, Math.sin(a) * dist);
+                wasp.position.set(Math.cos(a) * dist, 6 + Math.random() * 8, Math.sin(a) * dist);
                 enemies.push({ mesh: wasp, speed: 0.12 + level * 0.02, health: 4, biteAnimation: 0, isDead: false, isWasp: true });
                 scene.add(wasp);
             }
@@ -2525,7 +2636,7 @@
                 scene.add(crewMember);
             }
 
-            // Criar itens da espaçonave
+            // Criar itens da espaçonave (térreo)
             for (let i = 0; i < 15; i++) {
                 const type = Math.random();
                 let pickup;
@@ -2627,6 +2738,53 @@
                 scene.add(pickup);
             }
 
+            // Itens no segundo andar
+            for (let i = 0; i < 8; i++) {
+                const type = Math.random();
+                let pickup;
+                let label;
+                if (type > 0.7) {
+                    // Granadas
+                    pickup = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.4, 8, 8),
+                        new THREE.MeshStandardMaterial({ color: 0xff8c42, emissive: 0xff8c42, emissiveIntensity: 1.2 })
+                    );
+                    label = createLabel('GRANADAS', '#ff6600');
+                    pickup.type = 'grenades';
+                } else if (type > 0.5) {
+                    // Lança-chamas
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.5, 0.3, 0.8),
+                        new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xff4757, emissiveIntensity: 1.2 })
+                    );
+                    label = createLabel('LANÇA-CHAMAS', '#ff0000');
+                    pickup.type = 'flamethrower';
+                } else if (type > 0.3) {
+                    // Bazuca
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(2, 0.4, 0.6),
+                        new THREE.MeshStandardMaterial({ color: 0x00d2ff, emissive: 0x00d2ff, emissiveIntensity: 1.2 })
+                    );
+                    label = createLabel('BAZUCA PLASMA', '#00ffff');
+                    pickup.type = 'plasma_launcher';
+                } else {
+                    // Laser Gun
+                    pickup = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.8, 0.3, 1.2),
+                        new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.2 })
+                    );
+                    label = createLabel('LASER GUN', '#00ff00');
+                    pickup.type = 'weapon';
+                }
+                const gx = (Math.random()*4-2)*18;
+                const gz = (Math.random()*4-2)*18;
+                pickup.position.set(gx, 13, gz);
+                label.position.y = 2.5;
+                pickup.add(label);
+                pickups.push({ mesh: pickup, type: pickup.type, rotation: 0 });
+                scene.add(pickup);
+            }
+
             // CANOS ESTOURADOS COM FAÍSCAS
             window.sparks = [];
             for (let i = 0; i < 6; i++) {
@@ -2634,7 +2792,7 @@
                     new THREE.CylinderGeometry(0.4, 0.4, 6, 10),
                     new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.4 })
                 );
-                const px = Math.random() * 60 - 30;
+                const px = 0; // fixar no eixo X=0
                 const pz = Math.random() * 60 - 30;
                 pipe.position.set(px, 6 + Math.random() * 8, pz);
                 pipe.rotation.z = Math.random() * 0.6 - 0.3;
@@ -2908,6 +3066,33 @@
                 });
             }
 
+            // Spawner controlado: atraso entre spawns e limite de inimigos
+            spawnTimer += 1/60;
+            const alive = enemies.filter(e => !e.isDead).length;
+            if (spawnTimer >= nextSpawnDelay && alive < maxConcurrentEnemies) {
+                spawnTimer = 0;
+                nextSpawnDelay = 6 + Math.random() * 6; // 6-12s entre spawns
+                const use2F = Math.random() < 0.4 && enemySpawnPoints2F.length > 0; // às vezes no 2º andar
+                const points = use2F ? enemySpawnPoints2F : enemySpawnPoints;
+                const p = points[Math.floor(Math.random() * points.length)];
+                const roll = Math.random();
+                let ent;
+                if (roll < 0.2) {
+                    ent = createWasp();
+                    ent.position.copy(p.clone()); ent.position.y += use2F ? 2 : 5;
+                    enemies.push({ mesh: ent, speed: 0.12 + level * 0.02, health: 4, biteAnimation: 0, isDead: false, isWasp: true });
+                } else if (roll < 0.6) {
+                    ent = createFacehugger();
+                    ent.position.copy(p.clone()); if (!use2F) ent.position.y = 0.15; else ent.position.y = 12.2;
+                    enemies.push({ mesh: ent, speed: 0.08 + level * 0.01, health: 3, biteAnimation: 0, isDead: false });
+                } else {
+                    ent = createXenomorph();
+                    ent.position.copy(p.clone()); if (use2F) ent.position.y = 12;
+                    enemies.push({ mesh: ent, speed: 0.06 + level * 0.015, health: 8, biteAnimation: 0, isDead: false });
+                }
+                scene.add(ent);
+            }
+
             const isRunning = keys['ShiftLeft'] || keys['ShiftRight'];
             const baseSpeed = isRunning ? 0.25 : 0.15;
             const speed = stamina > 0 ? baseSpeed : baseSpeed * 0.5;
@@ -2972,6 +3157,46 @@
                 }
             }
 
+            // Movimento simples do parceiro (segue pontos aleatórios, com gravidade e colisão de passarelas)
+            if (partner) {
+                if (!partner.userData.target || partner.position.distanceTo(partner.userData.target) < 1) {
+                    partner.userData.target = new THREE.Vector3(
+                        Math.random() * 80 - 40,
+                        0,
+                        Math.random() * 80 - 40
+                    );
+                }
+                const pdir = new THREE.Vector3().subVectors(partner.userData.target, partner.position).normalize();
+                const pspeed = 0.12;
+                const pnx = partner.position.x + pdir.x * pspeed;
+                const pnz = partner.position.z + pdir.z * pspeed;
+                partner.position.x = pnx;
+                partner.position.z = pnz;
+                partnerVelocity.y -= 0.02;
+                partner.position.y += partnerVelocity.y;
+                // Colisão com walkways
+                const pBox = new THREE.Box3(
+                    new THREE.Vector3(partner.position.x - 1.2, partner.position.y - 1, partner.position.z - 1.2),
+                    new THREE.Vector3(partner.position.x + 1.2, partner.position.y + 2, partner.position.z + 1.2)
+                );
+                let partnerOnGround = false;
+                for (let w of walkways) {
+                    const wBox = new THREE.Box3().setFromObject(w);
+                    if (wBox.intersectsBox(pBox)) {
+                        partner.position.y = w.position.y + 1.5;
+                        partnerVelocity.y = 0;
+                        partnerOnGround = true;
+                        break;
+                    }
+                }
+                if (!partnerOnGround && partner.position.y <= 2.1) {
+                    partner.position.y = 2;
+                    partnerVelocity.y = 0;
+                }
+                // Olhar para direção do movimento
+                partner.rotation.y = Math.atan2(pdir.x, pdir.z);
+            }
+
             // SISTEMA IGUAL ÀS PASSARELAS - FUNCIONA EM TODO LUGAR!
             
             // Aplicar gravidade
@@ -3022,16 +3247,24 @@
             // Elevador simples: mover plataforma e jogador ao estar em cima
             if (elevators && elevators.length) {
                 elevators.forEach(el => {
-                    if (!el.platform) return;
-                    el.bounds.setFromObject(el.platform);
-                    const playerFeet = new THREE.Vector3(player.position.x, player.position.y - 1, player.position.z);
-                    if (el.bounds.containsPoint(playerFeet)) {
-                        // Decide destino: se abaixo de 7, sobe; se acima de 7, desce
+                    if (!el.platform || !el.platformCollider) return;
+                    // Atualiza colisor para acompanhar a plataforma
+                    el.platformCollider.position.y = el.platform.position.y;
+                    const colliderBox = new THREE.Box3().setFromObject(el.platformCollider);
+                    const playerFeetBox = new THREE.Box3(
+                        new THREE.Vector3(player.position.x - 0.8, player.position.y - 1.2, player.position.z - 0.8),
+                        new THREE.Vector3(player.position.x + 0.8, player.position.y, player.position.z + 0.8)
+                    );
+                    if (colliderBox.intersectsBox(playerFeetBox)) {
+                        // velocidade de 1 m/s -> step ~ 1/60 por frame
                         const targetY = player.position.y < 7 ? 12.25 : 2.25;
                         const dy = targetY - el.platform.position.y;
-                        const step = Math.sign(dy) * Math.min(Math.abs(dy), 0.15);
+                        const step = Math.sign(dy) * Math.min(Math.abs(dy), 1/60);
                         el.platform.position.y += step;
+                        el.platformCollider.position.y += step;
                         player.position.y += step;
+                        velocity.y = 0; // anular gravidade quando em cima
+                        onGround = true;
                     }
                 });
             }
@@ -3262,17 +3495,20 @@
                     }
                 }
 
-                // Flame não se move, é área curta
+                // Flame: partículas com movimento curto à frente
                 if (p.type === 'flame') {
-                    // dano por proximidade
+                    if (p.velocities && p.mesh.children) {
+                        p.mesh.children.forEach((sphere, idx) => {
+                            sphere.position.add(p.velocities[idx]);
+                            sphere.material.opacity *= 0.92;
+                        });
+                    }
                     enemies.forEach(e => {
                         if (e.isDead) return;
                         const dist = e.mesh.position.distanceTo(p.mesh.position);
-                        if (dist < 2) {
-                            e.health -= 0.2; // dano contínuo
-                        }
+                        if (dist < 2.5) e.health -= 0.25;
                     });
-                    return; // não colide como projétil
+                    return;
                 }
 
                 // Minas ficam paradas; explodem ao contato
